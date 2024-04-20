@@ -1,0 +1,3 @@
+curl -X GET -H "Custom-Header1: Value1" -H "Custom-Header2: Value2" http://localhost:8080
+
+
