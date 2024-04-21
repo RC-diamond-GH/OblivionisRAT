@@ -1,6 +1,5 @@
-import './style.css'
-import typescriptLogo from './typescript.svg'
-import viteLogo from './vite.svg'
+import typescriptLogo from '@/assets/typescript.svg'
+import viteLogo from '@/assets/vite.svg'
 import { useState } from 'react'
 import { invoke } from '@tauri-apps/api';
 
