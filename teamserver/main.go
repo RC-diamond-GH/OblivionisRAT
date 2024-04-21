@@ -40,8 +40,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer r.Body.Close()
 
-		fmt.Println("Received POST request body:", body)
-
 		w.Write(POST_handler(body)) //get the response
 
 		w.WriteHeader(http.StatusOK)
