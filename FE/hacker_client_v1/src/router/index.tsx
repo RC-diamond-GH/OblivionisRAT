@@ -1,6 +1,6 @@
 import { useRoutes, BrowserRouter } from "react-router-dom";
-
-import Count from "@/page/count/counter";
+import { lazy } from "react";
+import LazyWrap from "@/component/lazyWrap";
 import NotFound from "@/page/notfound";
 
 /**
@@ -8,15 +8,27 @@ import NotFound from "@/page/notfound";
  */
 const router = [
     {
+        path: "/",
+        element: <LazyWrap Component={lazy(() => import("@/page/home"))} />,
+    },
+    {
         path: "/demo",
-        element: <Count />,
+        element: (
+            <LazyWrap Component={lazy(() => import("@/page/count/counter"))} />
+        ),
     },
     {
         path: "*",
         element: <NotFound />,
     },
 ];
-const GenRouter = () => {  
+
+/**
+ * Generate router
+ * @todo useRoutes returns the elements that match the current location.
+ * @description returned elements are rendered by the caller.
+ */
+const GenRouter = (): React.ReactNode => {
     const routing = useRoutes(router);
     return routing;
 };

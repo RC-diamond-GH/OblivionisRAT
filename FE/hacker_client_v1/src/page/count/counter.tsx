@@ -1,8 +1,8 @@
+import { invoke } from "@tauri-apps/api";
+import { FC,useState } from "react";
+
 import typescriptLogo from "@/assets/typescript.svg";
 import viteLogo from "@/assets/vite.svg";
-import { useState } from "react";
-import { invoke } from "@tauri-apps/api";
-import { FC } from "react";
 
 const Count: FC = () => {
     const [counter, setCounter] = useState(0);
