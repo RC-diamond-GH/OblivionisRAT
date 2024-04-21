@@ -1,3 +1,10 @@
+DEBUG:
 curl -X GET -H "Custom-Header1: Value1" -H "Custom-Header2: Value2" http://localhost:8080
+
+HTTP:
+GET:模拟网页检验http头合法性的身份验证
+POST：第一次交换密钥
+GET：sleep包保持活性
+POST：post包接受来自木马的回显     200包返回jobs队列
 
 
