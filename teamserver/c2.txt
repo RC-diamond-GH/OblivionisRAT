@@ -3,14 +3,14 @@ curl -X GET -H "Custom-Header1: Value1" -H "Custom-Header2: Value2" http://local
 curl -X POST -H "Custom-Header1: Value1" -H "Custom-Header2: Value2" -d "This is the body content" http://localhost:8080
 
 curl -X GET -H "Custom-Header1: Value1" -H "Custom-Header2: Value2" http://localhost:8080 --next -X POST -H "Custom-Header1: Value1" -H "Cust
-om-Header2: Value2" -d "This is the body content" http://localhost:8080
+om-Header2: Value2" --data-binary "\xf0\x0d\xbe\xef\xde\xad\xbe\xef\xf0\x0d\xbe\xef\xde\xad\xbe\xef" http://localhost:8080
 
 
 
 HTTP:
 GET:模拟网页检验http头合法性的身份验证   返回小端字节序编码的 0xbeebeebe 在末尾
 （beacon检测到0xbeebeebe开始发送post包）
-POST：第一次交换密钥
+POST：第一次交换密钥,beacon在body中直接发送128位密钥     c2返回200ok，并且在末尾加上128密钥
 GET：sleep包保持活性
 POST：post包接受来自木马的回显     200包返回jobs队列
 
