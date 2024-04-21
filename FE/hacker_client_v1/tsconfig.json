@@ -20,6 +20,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
+  /* Include global.d.ts to help vscode recognize svg...'s type */
   "include": ["src","global.d.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
