@@ -17,7 +17,7 @@ PBYTE Uint128::toBytes() {
     return data;
 }
 void Uint128::printHex() {
-    printf("0x%llx%016llx", HG, LW);
+    printf("0x%llx %016llx", HG, LW);
 }
 
 Uint128 uint64Multi(size_t a, size_t b) {
@@ -81,10 +81,11 @@ Uint128 Uint128::modMulti(Uint128 num) {
     
     return Uint128(*low, *mid);
 }
+
 int Uint128::popBit() {
-    int toRet = LW & 1;
+    unsigned int toRet = LW & 1;
     LW >>= 1;
-    int bit = HG & 1;
+    unsigned long long bit = HG & 1;
     HG >>= 1;
     LW += bit << 63;
     return toRet;
@@ -100,6 +101,9 @@ Uint128 Uint128::modPow(Uint128 num) {
     Uint128 result(1, 0);
     Uint128 base(LW, HG);
     while(num.LW > 0 || num.HG > 0) {
+        printf("num = ");
+        num.printHex();
+        printf("\n");
         if(num.popBit() == 1) {
             result = result.modMulti(base);
         }
@@ -109,7 +113,9 @@ Uint128 Uint128::modPow(Uint128 num) {
 }
 
 int main() {
-    Uint128 a(114514, 0), b(0xdeadbeefdeadbeef, 0xbeefdeadbeefdead);
+    Uint128 a(0, 1), b(0xdeadbeefdeadbeef, 0xbeefdeadbeefdead);
+    a.printHex();
+    puts("");
     Uint128 ans = b.modPow(a);
     ans.printHex();
 }
