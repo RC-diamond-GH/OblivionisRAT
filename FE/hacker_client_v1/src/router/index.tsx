@@ -14,7 +14,7 @@ const router = [
     {
         path: "/demo",
         element: (
-            <LazyWrap Component={lazy(() => import("@/page/count/counter"))} />
+            <LazyWrap Component={lazy(() => import("@/page/count"))} />
         ),
     },
     {
