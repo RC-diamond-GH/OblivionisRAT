@@ -1,6 +1,6 @@
 #include "OblivionisAES.hpp"
 
-/* Encrpyt Box */
+// 各种 S 盒
 
 unsigned char g_Box1[] =
         {
@@ -43,7 +43,7 @@ unsigned char g_Box2[] =
         };
 
 
-unsigned char g_box3[] =
+unsigned char g_Box3[] =
         {
                 0x00, 0x02, 0x04, 0x06, 0x08, 0x0A, 0x0C, 0x0E, 0x10, 0x12, 0x14, 0x16, 0x18, 0x1A, 0x1C, 0x1E,
                 0x20, 0x22, 0x24, 0x26, 0x28, 0x2A, 0x2C, 0x2E, 0x30, 0x32, 0x34, 0x36, 0x38, 0x3A, 0x3C, 0x3E,
@@ -64,7 +64,7 @@ unsigned char g_box3[] =
         };
 
 
-unsigned char g_box4[] =
+unsigned char g_Box4[] =
         {
                 0x00, 0x03, 0x06, 0x05, 0x0C, 0x0F, 0x0A, 0x09, 0x18, 0x1B, 0x1E, 0x1D, 0x14, 0x17, 0x12, 0x11,
                 0x30, 0x33, 0x36, 0x35, 0x3C, 0x3F, 0x3A, 0x39, 0x28, 0x2B, 0x2E, 0x2D, 0x24, 0x27, 0x22, 0x21,
@@ -85,7 +85,6 @@ unsigned char g_box4[] =
         };
 
 
-/* Decrypt Box*/
 
 unsigned char g_DereplaceFourKeyBox[] =
         {
@@ -187,42 +186,15 @@ unsigned char g_DeBox4[] =
                 0xCA, 0xC1, 0xDC, 0xD7, 0xE6, 0xED, 0xF0, 0xFB, 0x92, 0x99, 0x84, 0x8F, 0xBE, 0xB5, 0xA8, 0xA3
         };
 
-void inline MyXor(unsigned char *key, unsigned char *data) {
-    for (int i = 0; i < 16; i++) {
-        data[i] = data[i] ^ key[i];
-    }
+// sub-functions for key initial
+inline DWORD ROR4(DWORD value, int count) {
+    count %= 32;
+    return (value >> count) | (value << (32 - count)) & ((1 << 32) - 1);
 }
 
-void inline replaceBoxData(unsigned char *data) {
-    for (size_t i = 0; i < 16; i++) {
-        data[i] = g_Box1[data[i]];
-    }
-}
-
-OblivionisAES::OblivionisAES(PBYTE pbKey) {
-    memmove(g_Key, pbKey, 16);
-    int keyLength = 16;
-    int Keyindex = 0;
-    // 取key最后4字节
-    memmove(g_TempKey, g_Key + 0xc, 4);
-    // 16字节xorkey + 生成160字节xorkey = 176字节xorkey
-    // 每组xorkey为16字节一共有11组xorkey
-    while (keyLength < 176) {
-        if (!(keyLength & 0xF)) {
-            replaceFourByteKey(g_TempKey);
-        }
-        for (int i = 0; i < 4; i++) {
-            g_Key[keyLength] = g_TempKey[i] ^ g_Key[Keyindex];
-            g_TempKey[i] = g_Key[keyLength];
-            keyLength++;
-            Keyindex++;
-        }
-    }
-}
-
-void OblivionisAES::replaceFourByteKey(unsigned char *fourByteKey) {
+inline void replaceFourByteKey(unsigned char *fourByteKey, int &g_replaceIndex) {
     // ror 8
-    *(DWORD *) fourByteKey = __ROR4__(*(DWORD *) fourByteKey, 8);
+    *(DWORD *) fourByteKey = ROR4(*(DWORD *) fourByteKey, 8);
     // 第一个字节处理方式
     unsigned char n_byte1 = g_Box1[fourByteKey[0]] ^ g_Box2[g_replaceIndex];
     fourByteKey[0] = n_byte1;
@@ -234,50 +206,26 @@ void OblivionisAES::replaceFourByteKey(unsigned char *fourByteKey) {
         fourByteKey[i] = n_byte3;
     }
 }
-VOID OblivionisAES::EncryptData(PBYTE pbData, DWORD *pdwLength) {
-    int dataIndex = 0;
 
-    *pdwLength = 16 * (*pdwLength / 16 + 1);
-    for (int j = 0; j < *pdwLength; j += 16) {
-        int xorKeyIndex = 16;
-        MyXor(g_Key, pbData + dataIndex);
-        for (int i = 0; i < 9; i++) {
-            replaceBoxData(pbData + dataIndex);
-            ByteOutOfOrder(pbData + dataIndex);
-            boxXorData(pbData + dataIndex);
-            MyXor(g_Key + xorKeyIndex, pbData + dataIndex);
-            xorKeyIndex += 16;
-        }
-        replaceBoxData(pbData + dataIndex);
-        ByteOutOfOrder(pbData + dataIndex);
-        MyXor(g_Key + xorKeyIndex, pbData + dataIndex);
-        dataIndex += 16;
+// sub-functions for encrypt/decrypt
+inline void MyXor(unsigned char *key, unsigned char *data) {
+    for (int i = 0; i < 16; i++) {
+        data[i] = data[i] ^ key[i];
     }
-    g_replaceIndex = 1;
 }
 
-VOID OblivionisAES::DecryptData(PBYTE pbData, DWORD pdwLength) {
-    int dataIndex = 0;
-    for (int j = 0; j < pdwLength; j += 16) {
-        int KeyIndex = 0xA0;
-        MyXor(g_Key + KeyIndex, pbData + dataIndex);
-        DeByteOutOfOrder(pbData + dataIndex);
-        DereplaceBoxData(pbData + dataIndex);
-        for (int i = 0; i < 9; i++) {
-            KeyIndex -= 0x10;
-            MyXor(g_Key + KeyIndex, pbData + dataIndex);
-            DeboxXorData(pbData + dataIndex);
-            DeByteOutOfOrder(pbData + dataIndex);
-            DereplaceBoxData(pbData + dataIndex);
-        }
-        MyXor(g_Key, pbData + dataIndex);
-        dataIndex += 16;
+inline void replaceBoxData(unsigned char *data) {
+    for (int i = 0; i < 16; i++) {
+        data[i] = g_Box1[data[i]];
     }
-    g_replaceIndex = 1;
+}
+inline void DereplaceBoxData(unsigned char *data) {
+    for (size_t i = 0; i < 16; i++) {
+        data[i] = g_DereplaceFourKeyBox[data[i]];
+    }
 }
 
-
-void OblivionisAES::ByteOutOfOrder(unsigned char *data) {
+inline void ByteOutOfOrder(unsigned char *data) {
     unsigned char ByteOut[16] = {0};
     ByteOut[0] = data[0];
     ByteOut[1] = data[5];
@@ -297,93 +245,7 @@ void OblivionisAES::ByteOutOfOrder(unsigned char *data) {
     ByteOut[15] = data[11];
     memmove(data, ByteOut, 16);
 }
-
-void OblivionisAES::boxXorData(unsigned char *data) {
-    unsigned char n_TempChang[16] = {0};
-    // 第1个字节
-    unsigned char temp = data[2] ^ data[3];
-    temp = temp ^ g_box3[data[0]];
-    temp = temp ^ g_box4[data[1]];
-    n_TempChang[0] = temp;
-    // 第2个字节
-    temp = data[0] ^ data[3];
-    temp = temp ^ g_box3[data[1]];
-    temp = temp ^ g_box4[data[2]];
-    n_TempChang[1] = temp;
-    // 第3个字节
-    temp = data[0] ^ data[1];
-    temp = temp ^ g_box3[data[2]];
-    temp = temp ^ g_box4[data[3]];
-    n_TempChang[2] = temp;
-    // 第4个字节
-    temp = data[1] ^ data[2];
-    temp = temp ^ g_box4[data[0]];
-    temp = temp ^ g_box3[data[3]];
-    n_TempChang[3] = temp;
-    // 第5个字节
-    temp = data[6] ^ data[7];
-    temp = temp ^ g_box3[data[4]];
-    temp = temp ^ g_box4[data[5]];
-    n_TempChang[4] = temp;
-    // 第6个字节
-    temp = data[4] ^ data[7];
-    temp = temp ^ g_box3[data[5]];
-    temp = temp ^ g_box4[data[6]];
-    n_TempChang[5] = temp;
-    // 第7个字节
-    temp = data[4] ^ data[5];
-    temp = temp ^ g_box3[data[6]];
-    temp = temp ^ g_box4[data[7]];
-    n_TempChang[6] = temp;
-    // 第8个字节
-    temp = data[5] ^ data[6];
-    temp = temp ^ g_box4[data[4]];
-    temp = temp ^ g_box3[data[7]];
-    n_TempChang[7] = temp;
-    // 第9个字节
-    temp = data[10] ^ data[11];
-    temp = temp ^ g_box3[data[8]];
-    temp = temp ^ g_box4[data[9]];
-    n_TempChang[8] = temp;
-    // 第10个字节
-    temp = data[8] ^ data[11];
-    temp = temp ^ g_box3[data[9]];
-    temp = temp ^ g_box4[data[10]];
-    n_TempChang[9] = temp;
-    // 第11个字节
-    temp = data[8] ^ data[9];
-    temp = temp ^ g_box3[data[10]];
-    temp = temp ^ g_box4[data[11]];
-    n_TempChang[10] = temp;
-    // 第12个字节
-    temp = data[9] ^ data[10];
-    temp = temp ^ g_box4[data[8]];
-    temp = temp ^ g_box3[data[11]];
-    n_TempChang[11] = temp;
-    // 第13个字节
-    temp = data[14] ^ data[15];
-    temp = temp ^ g_box3[data[12]];
-    temp = temp ^ g_box4[data[13]];
-    n_TempChang[12] = temp;
-    // 第14个字节
-    temp = data[12] ^ data[15];
-    temp = temp ^ g_box3[data[13]];
-    temp = temp ^ g_box4[data[14]];
-    n_TempChang[13] = temp;
-    // 第15个字节
-    temp = data[12] ^ data[13];
-    temp = temp ^ g_box3[data[14]];
-    temp = temp ^ g_box4[data[15]];
-    n_TempChang[14] = temp;
-    // 第16个字节
-    temp = data[13] ^ data[14];
-    temp = temp ^ g_box4[data[12]];
-    temp = temp ^ g_box3[data[15]];
-    n_TempChang[15] = temp;
-    memmove(data, n_TempChang, 16);
-}
-
-void OblivionisAES::DeByteOutOfOrder(unsigned char *data) {
+inline void DeByteOutOfOrder(unsigned char *data) {
     unsigned char ByteOut[16] = {0};
     ByteOut[0] = data[0];
     ByteOut[1] = data[13];
@@ -404,13 +266,95 @@ void OblivionisAES::DeByteOutOfOrder(unsigned char *data) {
     memmove(data, ByteOut, 16);
 }
 
-void OblivionisAES::DereplaceBoxData(unsigned char *data) {
-    for (size_t i = 0; i < 16; i++) {
-        data[i] = g_DereplaceFourKeyBox[data[i]];
-    }
-}
+inline void boxXorData(unsigned char *data) {
+    unsigned char n_TempChang[16] = {0};
+    // 第1个字节
+    unsigned char temp = data[2] ^ data[3];
+    temp = temp ^ g_Box3[data[0]];
+    temp = temp ^ g_Box4[data[1]];
+    n_TempChang[0] = temp;
+    // 第2个字节
+    temp = data[0] ^ data[3];
+    temp = temp ^ g_Box3[data[1]];
+    temp = temp ^ g_Box4[data[2]];
+    n_TempChang[1] = temp;
+    // 第3个字节
+    temp = data[0] ^ data[1];
+    temp = temp ^ g_Box3[data[2]];
+    temp = temp ^ g_Box4[data[3]];
+    n_TempChang[2] = temp;
+    // 第4个字节
+    temp = data[1] ^ data[2];
+    temp = temp ^ g_Box4[data[0]];
+    temp = temp ^ g_Box3[data[3]];
+    n_TempChang[3] = temp;
 
-void OblivionisAES::DeboxXorData(unsigned char *data) {
+    // 第5个字节
+    temp = data[6] ^ data[7];
+    temp = temp ^ g_Box3[data[4]];
+    temp = temp ^ g_Box4[data[5]];
+    n_TempChang[4] = temp;
+    // 第6个字节
+    temp = data[4] ^ data[7];
+    temp = temp ^ g_Box3[data[5]];
+    temp = temp ^ g_Box4[data[6]];
+    n_TempChang[5] = temp;
+    // 第7个字节
+    temp = data[4] ^ data[5];
+    temp = temp ^ g_Box3[data[6]];
+    temp = temp ^ g_Box4[data[7]];
+    n_TempChang[6] = temp;
+    // 第8个字节
+    temp = data[5] ^ data[6];
+    temp = temp ^ g_Box4[data[4]];
+    temp = temp ^ g_Box3[data[7]];
+    n_TempChang[7] = temp;
+
+    // 第9个字节
+    temp = data[10] ^ data[11];
+    temp = temp ^ g_Box3[data[8]];
+    temp = temp ^ g_Box4[data[9]];
+    n_TempChang[8] = temp;
+    // 第10个字节
+    temp = data[8] ^ data[11];
+    temp = temp ^ g_Box3[data[9]];
+    temp = temp ^ g_Box4[data[10]];
+    n_TempChang[9] = temp;
+    // 第11个字节
+    temp = data[8] ^ data[9];
+    temp = temp ^ g_Box3[data[10]];
+    temp = temp ^ g_Box4[data[11]];
+    n_TempChang[10] = temp;
+    // 第12个字节
+    temp = data[9] ^ data[10];
+    temp = temp ^ g_Box4[data[8]];
+    temp = temp ^ g_Box3[data[11]];
+    n_TempChang[11] = temp;
+
+    // 第13个字节
+    temp = data[14] ^ data[15];
+    temp = temp ^ g_Box3[data[12]];
+    temp = temp ^ g_Box4[data[13]];
+    n_TempChang[12] = temp;
+    // 第14个字节
+    temp = data[12] ^ data[15];
+    temp = temp ^ g_Box3[data[13]];
+    temp = temp ^ g_Box4[data[14]];
+    n_TempChang[13] = temp;
+    // 第15个字节
+    temp = data[12] ^ data[13];
+    temp = temp ^ g_Box3[data[14]];
+    temp = temp ^ g_Box4[data[15]];
+    n_TempChang[14] = temp;
+    // 第16个字节
+    temp = data[13] ^ data[14];
+    temp = temp ^ g_Box4[data[12]];
+    temp = temp ^ g_Box3[data[15]];
+    n_TempChang[15] = temp;
+
+    memmove(data, n_TempChang, 16);
+}
+inline void DeboxXorData(unsigned char *data) {
     unsigned char n_TempChang[16] = {0};
     // 第1个字节
     unsigned char temp = g_DeBox1[data[0]];
@@ -436,6 +380,7 @@ void OblivionisAES::DeboxXorData(unsigned char *data) {
     temp = temp ^ g_DeBox3[data[2]];
     temp = temp ^ g_DeBox1[data[3]];
     n_TempChang[3] = temp;
+
     // 第5个字节
     temp = g_DeBox1[data[4]];
     temp = temp ^ g_DeBox4[data[5]];
@@ -512,4 +457,73 @@ void OblivionisAES::DeboxXorData(unsigned char *data) {
     temp = temp ^ temp2 ^ temp3;
     n_TempChang[15] = temp;
     memmove(data, n_TempChang, 16);
+}
+
+OblivionisAES::OblivionisAES(PBYTE pbKey) {
+    memmove(g_Key, pbKey, 16);
+    int keyLength = 16;
+    int Keyindex = 0;
+    int g_replaceIndex = 1;
+    // 取key最后4字节
+    memmove(g_TempKey, g_Key + 0xc, 4);
+    // 16字节xorkey + 生成160字节xorkey = 176字节xorkey
+    // 每组xorkey为16字节一共有11组xorkey
+    while (keyLength < 176) {
+        if (!(keyLength & 0xF)) { // 处理新一组的 16 个字节
+            replaceFourByteKey(g_TempKey, g_replaceIndex);
+        }
+        for (int i = 0; i < 4; i++) {
+            g_Key[keyLength] = g_TempKey[i] ^ g_Key[Keyindex];
+            g_TempKey[i] = g_Key[keyLength];
+            keyLength++;
+            Keyindex++;
+        }
+    }
+}
+
+VOID OblivionisAES::EncryptData(PBYTE pbData, DWORD *pdwLength) {
+    int dataIndex = 0;
+    int len = *pdwLength;
+    int i, j;
+    *pdwLength = 16 * (*pdwLength / 16 + 1);
+    unsigned char padding = (unsigned char)(*pdwLength - len);
+    for(j = 0; j < padding; j++) {
+        pbData[len + j] = padding;
+    }
+    for (j = 0; j < *pdwLength; j += 16) {
+        int xorKeyIndex = 16;
+        MyXor(g_Key, pbData + dataIndex);
+        for (i = 0; i < 9; i++) {
+            replaceBoxData(pbData + dataIndex);
+            ByteOutOfOrder(pbData + dataIndex);
+            boxXorData(pbData + dataIndex);
+            MyXor(g_Key + xorKeyIndex, pbData + dataIndex);
+            xorKeyIndex += 16;
+        }
+        replaceBoxData(pbData + dataIndex);
+        ByteOutOfOrder(pbData + dataIndex);
+        MyXor(g_Key + xorKeyIndex, pbData + dataIndex);
+        dataIndex += 16;
+    }
+}
+
+VOID OblivionisAES::DecryptData(PBYTE pbData, DWORD *pdwLength) {
+    int dataIndex = 0;
+    for (int j = 0; j < *pdwLength; j += 16) {
+        int KeyIndex = 0xA0;
+        MyXor(g_Key + KeyIndex, pbData + dataIndex);
+        DeByteOutOfOrder(pbData + dataIndex);
+        DereplaceBoxData(pbData + dataIndex);
+        for (int i = 0; i < 9; i++) {
+            KeyIndex -= 0x10;
+            MyXor(g_Key + KeyIndex, pbData + dataIndex);
+            DeboxXorData(pbData + dataIndex);
+            DeByteOutOfOrder(pbData + dataIndex);
+            DereplaceBoxData(pbData + dataIndex);
+        }
+        MyXor(g_Key, pbData + dataIndex);
+        dataIndex += 16;
+    }
+    *pdwLength -= pbData[*pdwLength - 1];
+    pbData[*pdwLength] = 0;
 }
