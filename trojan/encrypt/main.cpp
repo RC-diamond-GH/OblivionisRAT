@@ -11,8 +11,7 @@ void hexDump(PBYTE data, int len) {
     }
     printf("\n");
 }
-
-int main() {
+void AESTest() {
     PBYTE key = (PBYTE)malloc(16);
     memmove(key, "1234567887654321", 16);
     const char *message = "abcdefghabcdefghabcdefghabcdefgh1";
@@ -35,4 +34,7 @@ int main() {
     hexDump(mes, mesLen);
 
     printf("\n%s\n", mes);
+}
+int main() {
+    
 }
