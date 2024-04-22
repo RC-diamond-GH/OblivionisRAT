@@ -27,6 +27,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodGet {
 		w.WriteHeader(http.StatusOK)
+		cookies := r.Cookies()
+		cookie := ""
+
+		for _, i := range cookies {
+			cookie += i.Value
+		}
+
+		w.Write(GET_handler(cookie)) //get the response
 		binary.LittleEndian.PutUint32(res, 0xbeebeebe)
 		w.Write(res)
 		res = make([]byte, 0)

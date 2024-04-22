@@ -9,14 +9,21 @@ import (
 )
 
 type Beacon struct {
-	hostname string `xml:"hostname"`
-	ip       string `xml:"ip"`
-	domin    string `xml:"domin"`
-	aeskey   string `xml:"aeskey"`
-	live     bool   `xml:"live"`
+	Hostname string `xml:"hostname"`
+	Ip       string `xml:"ip"`
+	Domin    string `xml:"domin"`
+	CusAES   string `xml:"CusAES"`
+	AESkey   string `xml:"AESkey"`
+	Live     bool   `xml:"live"`
+}
+type Listener struct {
+	Lisname string   `xml:"lisname"`
+	Port    int      `xml:"port"`
+	A       int      `xml:"a"`
+	Beacons []Beacon `xml:"beacon"`
 }
 
-func saveXML(filename string, data Beacon) error {
+func saveXML(filename string, data Listener) error {
 	filename = "./data/" + filename
 	file, err := os.Create(filename)
 	if err != nil {
@@ -28,6 +35,9 @@ func saveXML(filename string, data Beacon) error {
 	encoder.Indent("", "    ")
 	if err := encoder.Encode(data); err != nil {
 		return err
+	}
+	if err := encoder.Flush(); err != nil {
+		panic(err)
 	}
 	return nil
 }
