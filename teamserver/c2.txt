@@ -1,9 +1,14 @@
 DEBUG:
 curl -X GET -H "Custom-Header1: Value1" -H "Custom-Header2: Value2" http://localhost:8080
-curl -X POST -H "Custom-Header1: Value1" -H "Custom-Header2: Value2" -d "This is the body content" http://localhost:8080
+curl -X GET -H "Custom-Header1: Value1" -H "Custom-Header2: Value2" -b "cookie1=uDzi9XAnYHtkcja8n5aGo4tQ2v5kuMbLdn5iomXp7mE=" http://localhost:8080
 
-curl -X GET -H "Custom-Header1: Value1" -H "Custom-Header2: Value2" http://localhost:8080 --next -X POST -H "Custom-Header1: Value1" -H "Cust
-om-Header2: Value2" --data-binary "\xf0\x0d\xbe\xef\xde\xad\xbe\xef\xf0\x0d\xbe\xef\xde\xad\xbe\xef" http://localhost:8080
+
+curl -X POST -H "Custom-Header1: Value1" -H "Custom-Header2: Value2" -d $'\xf0\x0d\xbe\xef\xde\xad\xbe\xef\xf0\x0d\xbe\xef\xde\xad\xbe\xef' http://localhost:8080
+
+curl -X POST -H "Content-Type: application/octet-stream" -H "Custom-Header1: Value1" -H "Custom-Header2: Value2"  -d "\xf0\x0d\xbe\xef\xde\xad\xbe\xef\xf0\x0d\xbe\xef\xde\xad\xbe\xef" http://localhost:8080
+
+curl -X POST http://localhost:8080 --data-binary $'\xf0\x0d\xbe\xef\xde\xad\xbe\xef\xf0\x0d\xbe\xef\xde\xad\xbe\xef' -H "Content-Type: application/octet-stream" -H "Custom-Header1: Value1" -H "Custom-Header2: Value2"
+curl -X GET -H "Custom-Header1: Value1" -H "Custom-Header2: Value2" http://localhost:8080 --next -X POST -H "Custom-Header1: Value1" -H "Custom-Header2: Value2" --data-binary "\xf0\x0d\xbe\xef\xde\xad\xbe\xef\xf0\x0d\xbe\xef\xde\xad\xbe\xef" http://localhost:8080
 
 
 

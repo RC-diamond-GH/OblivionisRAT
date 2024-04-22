@@ -27,6 +27,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodGet {
 		w.WriteHeader(http.StatusOK)
+		cookies := r.Cookies()
+		cookie := ""
+
+		for _, i := range cookies {
+			cookie += i.Value
+		}
+
+		w.Write(GET_handler(cookie)) //get the response
 		binary.LittleEndian.PutUint32(res, 0xbeebeebe)
 		w.Write(res)
 		res = make([]byte, 0)
@@ -39,8 +47,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer r.Body.Close()
-
-		fmt.Println("Received POST request body:", body)
 
 		w.Write(POST_handler(body)) //get the response
 
