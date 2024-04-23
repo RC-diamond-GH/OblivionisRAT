@@ -12,7 +12,7 @@ var expectedHeaders = map[string]string{
 	"Custom-Header2": "Value2",
 }
 
-func Listener_Handler(w http.ResponseWriter, r *http.Request, listener Listener) {
+func Listener_Handler(w http.ResponseWriter, r *http.Request, listener *Listener) {
 	headers := r.Header
 	var res []byte
 
@@ -54,11 +54,14 @@ func Listener_Handler(w http.ResponseWriter, r *http.Request, listener Listener)
 			return
 		}
 		defer r.Body.Close()
-
-		w.Write(POST_handler(body, listener)) //get the response
-
 		w.WriteHeader(http.StatusOK)
-		binary.LittleEndian.PutUint32(res, 0xbeebeebe)
+
+		res = POST_handler(body, listener, r)
+
+		res_tmp := make([]byte, 4)
+		binary.LittleEndian.PutUint32(res_tmp, 0xbeebeebe)
+		res = append(res, res_tmp...)
+
 		w.Write(res)
 		res = make([]byte, 0)
 	}
