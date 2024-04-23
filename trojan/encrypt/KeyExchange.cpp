@@ -101,9 +101,6 @@ Uint128 Uint128::modPow(Uint128 num) {
     Uint128 result(1, 0);
     Uint128 base(LW, HG);
     while(num.LW > 0 || num.HG > 0) {
-        printf("num = ");
-        num.printHex();
-        printf("\n");
         if(num.popBit() == 1) {
             result = result.modMulti(base);
         }
@@ -113,9 +110,21 @@ Uint128 Uint128::modPow(Uint128 num) {
 }
 
 int main() {
-    Uint128 a(0, 1), b(0xdeadbeefdeadbeef, 0xbeefdeadbeefdead);
-    a.printHex();
-    puts("");
-    Uint128 ans = b.modPow(a);
-    ans.printHex();
+    Uint128 a(0x8F4D7A69E1B32C48, 0x4A9E6FDC57B84123);
+
+    Uint128 b1(0x6C5B230F198E9D7A, 0x3E8276A51D0FC6B9); // C2 的私钥
+
+    Uint128 b2(0x5D981B34E7A6CFC2, 0x7921ACD6540E3BF8); // 木马的私钥
+
+    Uint128 c1 = a.modPow(b1);  // C2 的公钥
+    Uint128 c2 = a.modPow(b2);  // 木马的公钥
+
+    Uint128 key1 = c2.modPow(b1); // C2 拿到木马的公钥后，算出的 key
+    Uint128 key2 = c1.modPow(b2); // 木马拿到 C2 的公钥后，算出的 key
+
+    printf("key1 = ");
+    key1.printHex();
+    printf("\nkey2 = ");
+    key2.printHex();
+    printf("\n");
 }
