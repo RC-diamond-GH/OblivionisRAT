@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
+	"reflect"
 )
 
 func GetBytes(data []byte, length int) []byte {
@@ -13,26 +14,33 @@ func GetBytes(data []byte, length int) []byte {
 	return data
 }
 
-func GET_handler(cookie string) []byte {
+func GET_handler(cookie string, listener Listener) ([]byte, bool) {
 	var res []byte
-	temp_key := []uint8{0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12}
-	aAES := getAES(temp_key)
-	//	tempe := base64.StdEncoding.EncodeToString(aAES.EncryptData(temp_key))
-	// println(tempe)
+	cookie_decode, err := base64.StdEncoding.DecodeString(cookie)
+	aAES := getAES(listener.A)
 
-	undecodeCusAES, _ := base64.StdEncoding.DecodeString(cookie)
-	printkey(aAES.DecryptData(undecodeCusAES))
-	//aAES := getAES(miyao)
-	//aAES.DecryptData(jiemishuju)
-	return res
+	if err != nil {
+		fmt.Println("AESa base64 not match" + err.Error())
+		return res, false
+	} else if len(cookie_decode) != 32 {
+		fmt.Println("AESa 16BYTES not match")
+
+		return res, false
+	} else if reflect.DeepEqual(listener.A, aAES.DecryptData(cookie_decode)) {
+		fmt.Println("AESa had match")
+		return res, true
+	} else {
+		fmt.Println("AESa not match")
+		return res, false
+	}
 }
 
-func POST_handler(body []byte) []byte {
+func POST_handler(body []byte, listener Listener) []byte {
 	var res []byte
 	if len(body) == 16 {
 		// regis beacon
 		xmlname := bToHexString(body)
-		if checkXMLExists(xmlname + ".xml") {
+		if checkXMLExists("./data/", xmlname+".xml") {
 			fmt.Println("have the xml")
 		} else {
 			beacons := []Beacon{
@@ -42,7 +50,7 @@ func POST_handler(body []byte) []byte {
 			listener := Listener{
 				Lisname: "listener1",
 				Port:    8080,
-				A:       123,
+				A:       convertToUint8("usanmsl"),
 				Beacons: beacons,
 			}
 

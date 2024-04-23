@@ -12,9 +12,9 @@ var expectedHeaders = map[string]string{
 	"Custom-Header2": "Value2",
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func Listener_Handler(w http.ResponseWriter, r *http.Request, listener Listener) {
 	headers := r.Header
-	res := make([]byte, 4)
+	var res []byte
 
 	for header, expectedValue := range expectedHeaders {
 		value := headers.Get(header)
@@ -26,18 +26,25 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodGet {
-		w.WriteHeader(http.StatusOK)
 		cookies := r.Cookies()
 		cookie := ""
 
 		for _, i := range cookies {
 			cookie += i.Value
 		}
+		res, love := GET_handler(cookie, listener)
+		if !love {
+			http.Error(w, fmt.Sprintf("Forbidden: Cookie for %s does not match", cookie), http.StatusForbidden)
+			return
+		} else {
+			w.WriteHeader(http.StatusOK)
+			res_tmp := make([]byte, 4)
+			binary.LittleEndian.PutUint32(res_tmp, 0xbeebeebe)
+			res = append(res, res_tmp...)
+			w.Write(res)
+			res = make([]byte, 0)
+		}
 
-		w.Write(GET_handler(cookie)) //get the response
-		binary.LittleEndian.PutUint32(res, 0xbeebeebe)
-		w.Write(res)
-		res = make([]byte, 0)
 	}
 
 	if r.Method == http.MethodPost {
@@ -48,7 +55,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer r.Body.Close()
 
-		w.Write(POST_handler(body)) //get the response
+		w.Write(POST_handler(body, listener)) //get the response
 
 		w.WriteHeader(http.StatusOK)
 		binary.LittleEndian.PutUint32(res, 0xbeebeebe)
@@ -58,8 +65,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/", handler)
-
-	fmt.Println("Server listening on :8080")
-	http.ListenAndServe(":8080", nil)
+	uri := ""
+	port := 8080
+	lisname := "ilovec2"
+	StartListener(uri, port, lisname)
 }
