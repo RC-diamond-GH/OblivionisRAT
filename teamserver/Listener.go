@@ -29,7 +29,8 @@ func StartListener(uri string, port int, lisname string) {
 			Lisname: lisname,
 			Uri:     "IGOR-" + uri,
 			Port:    port,
-			A:       convertToUint8("USAnmslhahahahahahahahhahahhahahaahahahaha"),
+			A:       temp_a(),
+			// convertToUint8("USAnmslhahahahahahahahhahahhahahaahahahaha"),
 			Beacons: beacons,
 		}
 
@@ -67,4 +68,15 @@ func convertToUint8(input string) []uint8 {
 	}
 
 	return result
+}
+
+func temp_a() []uint8 {
+	a := make([]uint8, 16)
+	i := 0
+	for i < 16 {
+		a[i] = (uint8)(0x41 + i*2)
+		i++
+	}
+	return a
+
 }

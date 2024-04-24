@@ -584,6 +584,7 @@ func hexDump(data []uint8) {
 }
 
 // 测试用例
+
 func test() {
 	key := "1234567887654321"
 	g_key := make([]uint8, len(key))
