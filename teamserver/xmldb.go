@@ -135,10 +135,7 @@ func Create_beacon_1(listener *Listener, ip string) {
 }
 
 func Create_beacon_2(listener *Listener, CusAes *big.Int, SrvKey *big.Int, ip string, domain string, i int) {
-
 	aeskey := Mod_Pow(CusAes, SrvKey)
-
-	fmt.Printf("%x", aeskey)
 
 	listener.Beacons[i].Domain = domain
 	listener.Beacons[i].CusAES = CusAes.String()
