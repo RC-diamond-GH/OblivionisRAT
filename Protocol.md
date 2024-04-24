@@ -41,7 +41,6 @@ HTTPS 的 Data 内容为：`Base64(AES(明文))`
 
 ```json
 {
-    'cds': {'auth': '认证字符串'},
     'mtdt': {
         'h_name': '计算机名',
         'wver':   'windows 版本',

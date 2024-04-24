@@ -108,23 +108,22 @@ Uint128 Uint128::modPow(Uint128 num) {
     }
     return result;
 }
-
+/*
 int main() {
-    Uint128 a(0x8F4D7A69E1B32C48, 0x4A9E6FDC57B84123);
+    Uint128 a(0x4f4d4b4947454341, 0x5f5d5b5957555351);
 
-    Uint128 b1(0x6C5B230F198E9D7A, 0x3E8276A51D0FC6B9); // C2 的私钥
+    Uint128 b1(0x000018be00006784, 0x2900004823); // C2 的私钥
 
-    Uint128 b2(0x5D981B34E7A6CFC2, 0x7921ACD6540E3BF8); // 木马的私钥
-
-    Uint128 c1 = a.modPow(b1);  // C2 的公钥
-    Uint128 c2 = a.modPow(b2);  // 木马的公钥
-
-    Uint128 key1 = c2.modPow(b1); // C2 拿到木马的公钥后，算出的 key
-    Uint128 key2 = c1.modPow(b2); // 木马拿到 C2 的公钥后，算出的 key
-
-    printf("key1 = ");
-    key1.printHex();
-    printf("\nkey2 = ");
-    key2.printHex();
+    Uint128 b2(0x2250024d65c55f0e, 0xb99dd089071ee5d6);
+    
+    Uint128 a_b1 = a.modPow(b1);
+    Uint128 a_b2 = a.modPow(b2);
+    a_b1.printHex();
     printf("\n");
+    a_b2.printHex();
+    printf("\n");
+    a_b1.modPow(b2).printHex();
+    printf("\n");
+    a_b2.modPow(b1).printHex();
 }
+*/

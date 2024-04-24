@@ -1,13 +1,19 @@
+#ifndef AES
+#define AES
 #include <stdio.h>
-#include <windows.h>
+
+typedef unsigned char *PBYTE;
+typedef unsigned long DWORD;
 
 class OblivionisAES
 {
 public:
     OblivionisAES(PBYTE pbKey);
-    VOID EncryptData(PBYTE pbData, DWORD* pdwLength);
-    VOID DecryptData(PBYTE pbData, DWORD* pdwLength);
+    void EncryptData(PBYTE pbData, int* pdwLength);
+    void DecryptData(PBYTE pbData, int* pdwLength);
 
     unsigned char g_Key[176] = { 0 };
     unsigned char g_TempKey[4] = { 0 };
 };
+
+#endif

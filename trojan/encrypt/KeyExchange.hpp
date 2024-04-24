@@ -1,3 +1,6 @@
+#ifndef KEY_EXCHANGE_HPP
+#define KEY_EXCHANGE_HPP
+
 #include<windows.h>
 #include<stdio.h>
 
@@ -20,3 +23,5 @@ class Uint128 {
     int popBit();
     void printHex();
 };
+
+#endif

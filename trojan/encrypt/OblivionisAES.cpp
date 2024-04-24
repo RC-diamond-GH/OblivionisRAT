@@ -184,11 +184,15 @@ unsigned char g_DeBox4[] =
                 0x7A, 0x71, 0x6C, 0x67, 0x56, 0x5D, 0x40, 0x4B, 0x22, 0x29, 0x34, 0x3F, 0x0E, 0x05, 0x18, 0x13,
                 0xCA, 0xC1, 0xDC, 0xD7, 0xE6, 0xED, 0xF0, 0xFB, 0x92, 0x99, 0x84, 0x8F, 0xBE, 0xB5, 0xA8, 0xA3
         };
-
+inline void memmove(PBYTE dst, PBYTE src, DWORD len) {
+    for(int i = 0; i < len; i++) {
+        dst[i] = src[i];
+    }
+}
 // sub-functions for key initial
 inline DWORD ROR4(DWORD value, int count) {
     count %= 32;
-    return (value >> count) | (value << (32 - count)) & ((1 << 32) - 1);
+    return (value >> count) | (value << (32 - count)) & (((size_t)1 << 32) - 1);
 }
 
 inline void replaceFourByteKey(unsigned char *fourByteKey, int &g_replaceIndex) {
@@ -480,7 +484,7 @@ OblivionisAES::OblivionisAES(PBYTE pbKey) {
     }
 }
 
-VOID OblivionisAES::EncryptData(PBYTE pbData, DWORD *pdwLength) {
+void OblivionisAES::EncryptData(PBYTE pbData, int *pdwLength) {
     int dataIndex = 0;
     int len = *pdwLength;
     int i, j;
@@ -506,7 +510,7 @@ VOID OblivionisAES::EncryptData(PBYTE pbData, DWORD *pdwLength) {
     }
 }
 
-VOID OblivionisAES::DecryptData(PBYTE pbData, DWORD *pdwLength) {
+void OblivionisAES::DecryptData(PBYTE pbData, int *pdwLength) {
     int dataIndex = 0;
     for (int j = 0; j < *pdwLength; j += 16) {
         int KeyIndex = 0xA0;
