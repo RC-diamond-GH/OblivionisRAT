@@ -58,6 +58,7 @@ func Send_Bytes_to(w http.ResponseWriter, data []byte, url string, expectedHeade
 	for key, value := range expectedHeaders {
 		req.Header.Set(key, value)
 	}
+	req.Header.Set("Iamfrom", "C2AUTH")
 	client := &http.Client{}
 	client.Do(req)
 }
