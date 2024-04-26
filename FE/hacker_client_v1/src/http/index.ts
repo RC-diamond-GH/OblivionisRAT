@@ -12,7 +12,7 @@ class Ask {
             body: {},
             use: () => {},
         },
-        response: (response: IResponse<Uint8Array>) => response.data,
+        response: (response: IResponse<any>) => response.data,
     };
 
     post = (url: string, data: Uint8Array) => {
@@ -32,13 +32,14 @@ class Ask {
     };
     get = (url: string, data: any) => {
         return new Promise((resolve) => {
-            const requestQuery = { ...data, ...this.interceptors.request.body };
+            console.log(http.Body.bytes(data), this.interceptors.baseURL + url);
+            // const requestQuery = { ...data, ...this.interceptors.request.body };
             const requestHeaders = { ...this.interceptors.request.headers };
             this.interceptors.request.use();
-            http.fetch<Uint8Array>(this.interceptors.baseURL + url, {
+            http.fetch(this.interceptors.baseURL + url, {
                 headers: requestHeaders,
-                method: "GET",                
-                query: http.Body.bytes(requestQuery),
+                method: "GET",
+                query: {},
             }).then((res) => {
                 // res为请求成功的回调数据
                 resolve(this.interceptors.response(res));

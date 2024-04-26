@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api";
 import { FC, useState } from "react";
 import { confirm, message } from "@tauri-apps/api/dialog";
 import { GET, POST } from "@/http";
-import { Input } from "@arco-design/web-react";
+import { Input } from "antd";
 import "@arco-design/web-react/dist/css/arco.css";
 
 import typescriptLogo from "@/assets/typescript.svg";
@@ -22,9 +22,10 @@ const Count: FC = () => {
     };
     const handleClickText = async () => {
         console.log("click");
-        const res = await GET("/", { name: "world" });
-        const confirmed = await confirm("Are you sure?", "Tauri");
-        message(`confirmed`, "" + confirmed);
+        const res = await GET("/api/publisher/getPublisherInfo",{});
+        console.log(res,'flag');
+        // const confirmed = await confirm("Are you sure?", "Tauri");
+        // message(`confirmed`, "" + confirmed);
     };
 
     const handleSend1 = async () => {
@@ -39,8 +40,8 @@ const Count: FC = () => {
         const res = await invoke("tcp");
         console.log(res);
     };
-    const handleInput = (val:string) => {
-        setInputValue(val);
+    const handleInput = (e:any) => {
+        setInputValue(e.target.value);
     };
     const handleInputEnter = () => {
         console.log(inputValue);
