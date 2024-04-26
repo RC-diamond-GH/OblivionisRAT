@@ -27,10 +27,11 @@ if __name__ == "__main__":
     while True:
         # 用户输入字节流数据
         byte_data = input("请输入字节流数据（以逗号分隔）：")
+        byte = input("string:")
 
         # 将用户输入的数据转换为字节流
         try:
-            data = bytes.fromhex(byte_data.replace(" ", "").replace(",", ""))
+            data = bytes.fromhex(byte_data.replace(" ", "").replace(",", "")) + byte.encode('utf-8')
         except ValueError:
             print("输入的数据不是有效的字节流，请重新输入。")
             continue

