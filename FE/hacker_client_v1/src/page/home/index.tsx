@@ -1,15 +1,16 @@
 import { FC, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { Input, Card } from "antd";
-import { Divider, List, Typography } from "antd";
+import { Input, Button, Modal, List, Typography, message } from "antd";
 import shell from "@/api/Shell";
 import newBeacon from "@/api/NewBeacon";
+
 import { fetch, Body } from "@tauri-apps/api/http";
 import { http } from "@tauri-apps/api";
 
 const Home: FC = () => {
     const navigate = useNavigate();
+    const [messageApi, contextHolder] = message.useMessage();
     const [inputValue, setInputValue] = useState("");
     const handleClick = () => {
         navigate("/demo");
@@ -46,14 +47,83 @@ const Home: FC = () => {
         "Australian walks 100km after outback crash.",
         "Man charged over missing weddingharged over missing weddingharged over missing weddingharged over missing wedding girl.",
         "Los Angeles battles huge wildfires.",
+        "Los Angeles battles huge wildfires.",
+        "Los Angeles battles huge wildfires.",
+        "Los Angeles battles huge wildfires.",
+        "Los Angeles battles huge wildfires.",
+        "Los Angeles battles huge wildfires.1111",
     ];
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [hosts, setHosts] = useState(0);
+    const [newBeaconNum, setNewBeaconNum] = useState(0);
+
+    const showModal = () => {
+        setIsModalOpen(true);
+    };
+
+    const handleOk = () => {
+        setIsModalOpen(false);
+    };
+
+    const handleCancel = () => {
+        setIsModalOpen(false);
+    };
+
+    const handleConnectNum = (e: any) => {
+        setNewBeaconNum(e.target.value);
+    };
+    const handleNewBeacon = async () => {
+        const res = await newBeacon();
+        console.log(res, "<--res");
+        messageApi.open({
+            type: "success",
+            content: "Successfully created a new beacon",
+            duration: 1.5,
+        });
+    };
     return (
         <div style={{ width: "100%" }}>
-            {/* <h1 onClick={handleClickTest}>TestShell</h1>
-            <h1 onClick={handleClickTest1}>TestBeacons</h1>
-            <h1 onClick={handleClickTest2}>TestNewBeacon</h1>
-            <button onClick={handleClick}>goto</button> */}
-                        
+            <main
+                style={{
+                    position: "absolute",
+                    height: "50vh",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "start",
+                    padding: "0 1em",
+                }}
+            >
+                <p>Current available hosts : {hosts} </p>
+                <section style={{ display: "flex", gap: "1em" }}>
+                    <Button
+                        style={{ backgroundColor: "#20242a", color: "#fff" }}
+                        onClick={showModal}
+                    >
+                        Connect to Beacon
+                    </Button>
+                    <Button
+                        style={{ backgroundColor: "#20242a", color: "#fff" }}
+                        onClick={handleNewBeacon}
+                    >
+                        + New Beacon
+                    </Button>
+                </section>
+                <Modal
+                    title="Create a new Beacon"
+                    open={isModalOpen}
+                    onOk={handleOk}
+                    onCancel={handleCancel}
+                    okButtonProps={{ style: { backgroundColor: "#20242a" } }}
+                >
+                    <p>Please input a beacon number : </p>
+                    <Input value={newBeaconNum} onChange={handleConnectNum} />
+                </Modal>
+                {contextHolder}
+            </main>
+
             <List
                 style={{
                     position: "fixed",
@@ -61,6 +131,9 @@ const Home: FC = () => {
                     left: 0,
                     right: 0,
                     boxSizing: "border-box",
+                    color: "#ffffff",
+                    maxHeight: "50vh",
+                    overflow: "auto",
                 }}
                 header={<div>TERMINAL</div>}
                 footer={
@@ -77,7 +150,10 @@ const Home: FC = () => {
                 dataSource={data}
                 renderItem={(item) => (
                     <List.Item style={{ color: "#ffffff" }}>
-                        <Typography.Text mark>[SHELL]</Typography.Text> {item}
+                        <Typography.Text type="success">
+                            [SHELL]
+                        </Typography.Text>{" "}
+                        {item}
                     </List.Item>
                 )}
             />
