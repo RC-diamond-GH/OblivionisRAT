@@ -134,6 +134,8 @@ void Receive200OK() {
     int msgLen;
     switch(cmdNum) {
         case 2: message = commandEcho(args, argsLen, &msgLen); break;
+        case 3: message = command_ls(args, argsLen, &msgLen); break;
+        case 4: message = command_download(args, argsLen, &msgLen); break;
         default: message = nullptr;
     }
     if(message != nullptr) {
