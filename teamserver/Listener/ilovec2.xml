@@ -10,7 +10,7 @@
     <arch>x86-64</arch>
     <system>windows 10</system>
     <CusAES>85824651517802763553048753546345383934</CusAES>
-    <AESkey>43052336526443339666186532955595852113</AESkey>
+    <AESkey>106192694645641899123747416195011106468</AESkey>
     <live>true</live>
   </beacon>
 </Listener>

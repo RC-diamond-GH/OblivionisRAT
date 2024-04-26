@@ -157,6 +157,7 @@ void sockSend(char *buf, int len) {
 char msgEncrypt[4096];
 void PostBreath() {
     while(true) {
+        printf("try to breath\n");
         Sleep(config.sleep);
         connectSocket();
         Queue node = outQueue();
@@ -173,9 +174,10 @@ void PostBreath() {
                 buf[len + i] = msgEncrypt[i];
             }
             len += msgLen;
+            free(node->message);
+            free(node);
         }
-        free(node->message);
-        free(node);
+        
         sockSend(buf, len);
         TOTAL_PRINTF("send %d bytes\n", len);
         Receive200OK();
