@@ -9,6 +9,10 @@ import (
 	"os"
 )
 
+type Config struct {
+	Users []User `xml:"user"`
+}
+
 type Beacon struct {
 	Hostname string `xml:"hostname"`
 	Ip       string `xml:"ip"`

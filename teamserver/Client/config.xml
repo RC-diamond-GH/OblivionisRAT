@@ -1,0 +1,8 @@
+<Config>
+    <Users>
+        <User>
+            <Username>admin</Username>
+            <Password>password</Password>
+        </User>
+    </Users>
+</Config>
