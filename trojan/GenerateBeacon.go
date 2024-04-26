@@ -78,7 +78,7 @@ func main() {
 	config.useragent = "Value1"
 	config.a = temp_a()
 	config.url = ""
-	config.sleep = 1
+	config.sleep = 2000
 	config.host = "testhost"
 	GenerateOblivionis(config, "./beacon.exe")
 }
