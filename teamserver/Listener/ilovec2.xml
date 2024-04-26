@@ -4,11 +4,11 @@
   <port>8080</port>
   <a>ACEGIKMOQSUWY[]_</a>
   <beacon>
-    <hostname></hostname>
+    <hostname>Desktop-win-99k2</hostname>
     <ip>127.0.0.1</ip>
     <domain>testhost</domain>
-    <arch></arch>
-    <system></system>
+    <arch>x86-64</arch>
+    <system>windows 10</system>
     <CusAES>85824651517802763553048753546345383934</CusAES>
     <AESkey>106192694645641899123747416195011106468</AESkey>
     <live>true</live>
