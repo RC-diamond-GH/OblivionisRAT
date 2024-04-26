@@ -66,7 +66,7 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 			Create_beacon_2(listener, &CusAes, Srvkey, ip, domain, i)
 			SrvAes := Mod_Pow(Bytes_To_BigInt(ReverseBytes(listener.A)), Srvkey)
 
-			fmt.Printf("%x", stringToBytes(listener.Beacons[i].AESkey))
+			fmt.Printf("%x", stringToBigint(listener.Beacons[i].AESkey))
 
 			res = append(res, ReverseBytes(SrvAes.Bytes())...)
 			return res, true
@@ -105,9 +105,6 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 				} else {
 					res = append(res, make_fucker(listener, i)...)
 					res = eAES.EncryptData(res)
-					
-					printkey(res)
-
 					return ReverseBytes(res), true
 				}
 			} else {
@@ -156,7 +153,7 @@ func GetBytes(data []byte, length int) []byte {
 	return res
 }
 
-func stringToBytes(s string) []byte {
+func stringToBigint(s string) []byte {
 	num := new(big.Int)
 	_, ok := num.SetString(s, 10)
 	if !ok {
