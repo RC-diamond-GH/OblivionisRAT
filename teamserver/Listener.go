@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rand"
 	"fmt"
 	"net/http"
@@ -46,6 +47,19 @@ func StartListener(uri string, port int, lisname string) {
 		}
 	}
 
+}
+
+func Send_Bytes_to(w http.ResponseWriter, data []byte, url string, expectedHeaders map[string]string) {
+	req, err := http.NewRequest("POST", url, bytes.NewReader(data))
+	if err != nil {
+		http.Error(w, "Error creating request", http.StatusInternalServerError)
+		return
+	}
+	for key, value := range expectedHeaders {
+		req.Header.Set(key, value)
+	}
+	client := &http.Client{}
+	client.Do(req)
 }
 
 func convertToUint8(input string) []uint8 {
