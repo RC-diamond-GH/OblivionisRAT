@@ -536,7 +536,7 @@ func (aes OblivionisAES) EncryptData(pdData []uint8) []uint8 {
  * 参数是需要进行解密的数据, 使用 uint8 数组的形式给出
  * 返回值就是解密后的数据
  */
-func (aes OblivionisAES) DecryptData(pdData []uint8) []uint8 {
+func (aes OblivionisAES) DecryptData(pdData []uint8) ([]uint8, bool) {
 	data := make([]uint8, len(pdData))
 	copy(data, pdData)
 	dataIdx := 0
@@ -560,10 +560,33 @@ func (aes OblivionisAES) DecryptData(pdData []uint8) []uint8 {
 		j += 16
 	}
 
-	trueLen := len(data) - int(data[len(data)-1])
-	trueData := make([]uint8, trueLen)
-	copy(trueData, data)
-	return trueData
+	/* padding:
+	 * 如果被正确解密, 假设最后一个字节的值为 a
+	 * 那么后 a 个字节的值都是 a
+	 * 去掉这 a 个字节, 即可得到真正的明文
+	 */
+
+	println("Hello")
+	successfulDecryption := true
+	paddingValue := int(data[len(data)-1])
+	if paddingValue <= len(data) {
+		for k := len(data) - paddingValue; k < len(data); k++ {
+			if k < 0 || int(data[k]) != paddingValue {
+				successfulDecryption = false
+				break
+			}
+		}
+	} else {
+		successfulDecryption = false
+	}
+	if successfulDecryption {
+		trueLen := len(data) - int(data[len(data)-1])
+		trueData := make([]uint8, trueLen)
+		copy(trueData, data)
+		return trueData, true
+	}
+	println("end")
+	return nil, false
 }
 
 /**
@@ -581,6 +604,12 @@ func hexDump(data []uint8) {
 		i++
 	}
 	fmt.Println("")
+}
+
+func (aes OblivionisAES) printKey() {
+	println("\nFull AES key = ")
+	hexDump(aes.key)
+
 }
 
 // 测试用例
@@ -605,7 +634,7 @@ func test() {
 	a := aes.EncryptData(bytes)
 	fmt.Println("Encrypted = ")
 	hexDump(a)
-	b := aes.DecryptData(a)
+	b, _ := aes.DecryptData(a)
 	fmt.Println("Decrypted = ")
 	hexDump(b)
 }

