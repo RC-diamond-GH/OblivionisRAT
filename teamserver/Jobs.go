@@ -14,19 +14,11 @@ type Job struct {
 	funny   bool
 }
 
-func New_job(command uint16, shell string) *Job {
-	return &Job{
-		command: command,
-		shell:   shell,
-		funny:   true,
-	}
-}
-
 func is_jobs_null(listener *Listener, i int) bool {
 	if len(listener.Beacons[i].jobs) == 0 {
-		return false
-	} else {
 		return true
+	} else {
+		return false
 	}
 }
 
@@ -37,7 +29,9 @@ func make_fucker(listener *Listener, i int) []byte {
 	binary.LittleEndian.PutUint16(command, job.command)
 
 	res = append(res, command...)
-	res = append(res, ReverseBytes(stringToBytes(job.shell))...)
+	res = append(res, ReverseBytes([]byte(job.shell))...)
+
+	printkey(res)
 
 	listener.Beacons[i].jobs[0].funny = false
 

