@@ -1,0 +1,10 @@
+<Config>
+    <user>
+        <username>admin</username>
+        <password>password</password>
+    </user>
+    <user>
+        <username>user2</username>
+        <password>pass2</password>
+    </user>
+</Config>
