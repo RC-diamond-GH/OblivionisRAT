@@ -87,7 +87,7 @@ func Listener_Handler(w http.ResponseWriter, r *http.Request, listener *Listener
 				config.useragent = "Value1"
 				config.a = listener.A
 				config.url = ""
-				config.sleep = 1
+				config.sleep = 1000
 				config.host = "testhost"
 				GenerateOblivionis(config, "./beacons/beacon.exe")
 

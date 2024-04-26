@@ -14,19 +14,11 @@ type Job struct {
 	funny   bool
 }
 
-func New_job(command uint16, shell string) *Job {
-	return &Job{
-		command: command,
-		shell:   shell,
-		funny:   true,
-	}
-}
-
 func is_jobs_null(listener *Listener, i int) bool {
 	if len(listener.Beacons[i].jobs) == 0 {
-		return false
-	} else {
 		return true
+	} else {
+		return false
 	}
 }
 
