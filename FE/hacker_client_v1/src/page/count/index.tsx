@@ -1,5 +1,9 @@
 import { invoke } from "@tauri-apps/api";
-import { FC,useState } from "react";
+import { FC, useState } from "react";
+import { confirm, message } from "@tauri-apps/api/dialog";
+import { GET, POST } from "@/http";
+import { Input } from "@arco-design/web-react";
+import "@arco-design/web-react/dist/css/arco.css";
 
 import typescriptLogo from "@/assets/typescript.svg";
 import viteLogo from "@/assets/vite.svg";
@@ -7,6 +11,7 @@ import viteLogo from "@/assets/vite.svg";
 const Count: FC = () => {
     const [counter, setCounter] = useState(0);
     const [str, setStr] = useState("");
+    const [inputValue, setInputValue] = useState("");
 
     const handleUpdate = () => {
         invoke("hello", { name: "world" }).then((res) => {
@@ -15,6 +20,32 @@ const Count: FC = () => {
         });
         setCounter((count) => count + 1);
     };
+    const handleClickText = async () => {
+        console.log("click");
+        const res = await GET("/", { name: "world" });
+        const confirmed = await confirm("Are you sure?", "Tauri");
+        message(`confirmed`, "" + confirmed);
+    };
+
+    const handleSend1 = async () => {
+        const res = await invoke("c1toc2");
+        console.log(res);
+    };
+    const handleSend2 = async () => {
+        const res = await invoke("c2toc1");
+        console.log(res);
+    };
+    const handleSend3 = async () => {
+        const res = await invoke("tcp");
+        console.log(res);
+    };
+    const handleInput = (val:string) => {
+        setInputValue(val);
+    };
+    const handleInputEnter = () => {
+        console.log(inputValue);
+        setInputValue("");
+    }
     return (
         <div>
             <a href="https://vitejs.dev" target="_blank">
@@ -33,9 +64,10 @@ const Count: FC = () => {
                     count is {counter}, str is {str}
                 </button>
             </div>
-            <p className="read-the-docs">
+            <p className="read-the-docs" onClick={handleClickText}>
                 Click on the Vite and TypeScript logos to learn more
             </p>
+            <Input value={inputValue} onChange={handleInput} onPressEnter={handleInputEnter} />
         </div>
     );
 };
