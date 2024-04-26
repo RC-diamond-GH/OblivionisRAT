@@ -1,9 +1,8 @@
 import { invoke } from "@tauri-apps/api";
 import { FC, useState } from "react";
-import { confirm, message } from "@tauri-apps/api/dialog";
-import { GET, POST } from "@/http";
+// import { confirm, message } from "@tauri-apps/api/dialog";
+import { GET } from "@/http";
 import { Input } from "antd";
-import "@arco-design/web-react/dist/css/arco.css";
 
 import typescriptLogo from "@/assets/typescript.svg";
 import viteLogo from "@/assets/vite.svg";
@@ -28,18 +27,18 @@ const Count: FC = () => {
         // message(`confirmed`, "" + confirmed);
     };
 
-    const handleSend1 = async () => {
-        const res = await invoke("c1toc2");
-        console.log(res);
-    };
-    const handleSend2 = async () => {
-        const res = await invoke("c2toc1");
-        console.log(res);
-    };
-    const handleSend3 = async () => {
-        const res = await invoke("tcp");
-        console.log(res);
-    };
+    // const handleSend1 = async () => {
+    //     const res = await invoke("c1toc2");
+    //     console.log(res);
+    // };
+    // const handleSend2 = async () => {
+    //     const res = await invoke("c2toc1");
+    //     console.log(res);
+    // };
+    // const handleSend3 = async () => {
+    //     const res = await invoke("tcp");
+    //     console.log(res);
+    // };
     const handleInput = (e:any) => {
         setInputValue(e.target.value);
     };

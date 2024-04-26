@@ -1,46 +1,19 @@
 import { FC, useState } from "react";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 
 import { Input, Button, Modal, List, Typography, message } from "antd";
 import shell from "@/api/Shell";
 import newBeacon from "@/api/NewBeacon";
 
-import { fetch, Body } from "@tauri-apps/api/http";
+import { fetch, Body as _ } from "@tauri-apps/api/http";
 import { http } from "@tauri-apps/api";
 
 const Home: FC = () => {
-    const navigate = useNavigate();
     const [messageApi, contextHolder] = message.useMessage();
     const [inputValue, setInputValue] = useState("");
-    const handleClick = () => {
-        navigate("/demo");
-    };
-    const handleInput = (e: any) => {
-        setInputValue(e.target.value);
-    };
-    const handleInputEnter = () => {
-        console.log(inputValue);
-        setInputValue("");
-    };
-    const handleClickTest = async () => {
-        const res = await shell();
-        console.log(
-            res,
-            "<--res",
-            new TextDecoder().decode(new TextEncoder().encode("hello"))
-        );
-    };
-    const handleClickTest1 = async () => {
-        const res = await fetch("http://localhost:9090/api/book/getBook", {
-            method: "GET",
-            body: http.Body.bytes(new Uint8Array([0x00, 0x00, 0x00, 0x02])),
-        });
-        console.log(res, "<--res");
-    };
-    const handleClickTest2 = async () => {
-        const res = await newBeacon();
-        console.log(res, "<--res");
-    };
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [hosts, setHosts] = useState(0);
+    const [newBeaconNum, setNewBeaconNum] = useState(0);
     const data = [
         "Racing car sprays burning fuel into crowd.",
         "Japanese princess to wed commoner.",
@@ -53,16 +26,47 @@ const Home: FC = () => {
         "Los Angeles battles huge wildfires.",
         "Los Angeles battles huge wildfires.1111",
     ];
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [hosts, setHosts] = useState(0);
-    const [newBeaconNum, setNewBeaconNum] = useState(0);
+
+    const handleInput = (e: any) => {
+        setInputValue(e.target.value);
+    };
+    /**
+     * @description: send the input value to the shell
+     */
+    const handleInputEnter = async () => {
+        console.log(inputValue);
+        const res = await shell();
+        console.log(
+            res,
+            "<--res",
+            new TextDecoder().decode(new TextEncoder().encode("hello"))
+        );
+        setInputValue("");
+    };
+    // const handleClickTest1 = async () => {
+    //     const res = await fetch("http://localhost:9090/api/book/getBook", {
+    //         method: "GET",
+    //         body: http.Body.bytes(new Uint8Array([0x00, 0x00, 0x00, 0x02])),
+    //     });
+    //     console.log(res, "<--res");
+    // };
 
     const showModal = () => {
         setIsModalOpen(true);
     };
 
-    const handleOk = () => {
-        setIsModalOpen(false);
+    /**
+     * @description: connect to the beacon
+     */
+    const handleOk = async () => {
+        const res = await fetch("http://localhost:9090/api/book/getBook", {
+            method: "GET",
+            body: http.Body.bytes(new Uint8Array([0x00, 0x00, 0x00, 0x02])),
+        });
+        if (res) {
+            setHosts(hosts + 1);
+            setIsModalOpen(false);
+        }
     };
 
     const handleCancel = () => {
@@ -72,6 +76,10 @@ const Home: FC = () => {
     const handleConnectNum = (e: any) => {
         setNewBeaconNum(e.target.value);
     };
+
+    /**
+     * @description: create a new beacon
+     */
     const handleNewBeacon = async () => {
         const res = await newBeacon();
         console.log(res, "<--res");
