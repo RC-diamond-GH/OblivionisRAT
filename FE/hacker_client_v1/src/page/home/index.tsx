@@ -15,13 +15,7 @@ const Home: FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [hosts, setHosts] = useState(0);
     const [newBeaconNum, setNewBeaconNum] = useState(0);
-    const [data, setData] = useState([
-        { id: 0, msg: "Racing car sprays burning fuel into crowd." },
-        { id: 1, msg: "Racing car sprays burning fuel into crowd." },
-        { id: 2, msg: "Japanese princess to wed commoner." },
-        { id: 3, msg: "Australian walks 100km after outback crash." },
-        { id: 4, msg: "Australian walks 100km after outbac" },
-    ]);
+    const [data, setData] = useState<{id:number,msg:string}[]>([]);
     const [beaconList, setBeaconList] = useState<number[]>([0, 1, 2]);
     const [targetId, setTargetId] = useState(0);
 
@@ -63,11 +57,10 @@ const Home: FC = () => {
      */
     const handleInputEnter = async () => {
         console.log(inputValue);
-        const cmd_arr = inputValue.split(" ");
-        let id = +cmd_arr[0];
-        let cmd = cmd_arr[1];
-        let param = cmd_arr[2];
-        const res = await shell(id, cmd, param);
+        const cmd_arr = inputValue.split(" ");                    
+        let cmd = cmd_arr[0];
+        let param = cmd_arr[1];        
+        const res = await shell(targetId, cmd, param);
         console.log(res, "<--res");
         setInputValue("");
     };
@@ -139,12 +132,12 @@ const Home: FC = () => {
             >
                 <p>Current available hosts : {hosts} </p>
                 <section style={{ display: "flex", gap: "1em" }}>
-                    <Button
+                    {/* <Button
                         style={{ backgroundColor: "#20242a", color: "#fff" }}
                         onClick={showModal}
                     >
                         Connect to Beacon
-                    </Button>
+                    </Button> */}
                     <Button
                         style={{ backgroundColor: "#20242a", color: "#fff" }}
                         onClick={handleNewBeacon}
