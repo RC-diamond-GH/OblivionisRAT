@@ -10,7 +10,11 @@ import (
 )
 
 type Config struct {
-	Users []User `xml:"user"`
+	Users     []User     `xml:"user"`
+	Listener  []Listener `xml:"listener"`
+	Host      string     `xml:"host"`
+	Useragent string     `xml:"useragent"`
+	C2port    uint16     `xml:"c2port"`
 }
 
 type Beacon struct {
@@ -27,7 +31,7 @@ type Beacon struct {
 type Listener struct {
 	Lisname string   `xml:"lisname"`
 	Uri     string   `xml:"uri"`
-	Port    int      `xml:"port"`
+	Port    uint16   `xml:"port"`
 	A       []uint8  `xml:"a"`
 	Beacons []Beacon `xml:"beacon"`
 }

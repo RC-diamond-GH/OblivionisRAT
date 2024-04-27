@@ -15,8 +15,8 @@ if __name__ == "__main__":
 
     # 设置请求头和请求体
     headers = {
-        "Username": "admin",
-        "Password": "password",
+        "user-name": "admin",
+        "pass-word": "password",
         "User-Agent": "Value1",
     }
 

