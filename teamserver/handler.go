@@ -43,10 +43,6 @@ func GET_handler(cookie string, listener *Listener, r *http.Request) ([]byte, bo
 		fmt.Println("AESa had match")
 		return res, true
 	} else {
-		printkey(listener.A)
-		println("\n")
-		printkey(decrypt)
-
 		fmt.Println("AESa not match")
 		return res, false
 	}
@@ -58,12 +54,8 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
 	domain := r.Host
 
-	println("1")
-
 	for i, beacon := range listener.Beacons {
 		if beacon.Ip == ip && beacon.AESkey == "" && beacon.Arch == "" {
-
-			println("2")
 
 			var CusAes big.Int
 			CusAes.SetBytes(ReverseBytes(GetBytes(body, 16)))
@@ -93,7 +85,7 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 			listener.Beacons[i].Arch = mtdt["arch"]
 			listener.Beacons[i].System = mtdt["wver"]
 
-			println("saving xml")
+			println("Saving Xml File :)")
 			ModifyBeacons("./Listener/"+listener.Lisname, listener.Beacons)
 
 			return res, true

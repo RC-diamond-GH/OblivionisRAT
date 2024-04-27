@@ -69,7 +69,7 @@ func StartClient(uri string, port uint16) {
 					body = body[4:]
 					lisname := string(body[:4])
 					port2 := binary.BigEndian.Uint16(body[4:6])
-					uri2 := ""
+					uri2 := strconv.Itoa(int(port2))
 					a := body[6:]
 					go StartListener(uri2, port2, lisname, a)
 					lis++
@@ -82,7 +82,7 @@ func StartClient(uri string, port uint16) {
 				} else {
 					listen_port := binary.BigEndian.Uint16(body[:2])
 					body = body[2:]
-					Send_Bytes_to(w, body, "http://localhost:"+strconv.Itoa(int(listen_port)), expectedHeaders)
+					Send_Bytes_to(w, body, "http://localhost:"+strconv.Itoa(int(listen_port))+"/"+strconv.Itoa(int(listen_port)), expectedHeaders)
 					w.WriteHeader(http.StatusOK)
 					w.Header().Set("Content-Type", "application/octet-stream")
 					w.Write(res)
