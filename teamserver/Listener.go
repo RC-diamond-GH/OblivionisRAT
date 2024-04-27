@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func StartListener(uri string, port int, lisname string) {
+func StartListener(uri string, port uint16, lisname string, a []byte) {
 
 	if checkXMLExists("./Listener/", lisname+".xml") {
 		var listener Listener
@@ -30,8 +30,7 @@ func StartListener(uri string, port int, lisname string) {
 			Lisname: lisname,
 			Uri:     "IGOR-" + uri,
 			Port:    port,
-			A:       temp_a(),
-			// convertToUint8("USAnmslhahahahahahahahhahahhahahaahahahaha"),
+			A:       a,
 			Beacons: beacons,
 		}
 
@@ -83,15 +82,4 @@ func convertToUint8(input string) []uint8 {
 	}
 
 	return result
-}
-
-func temp_a() []uint8 {
-	a := make([]uint8, 16)
-	i := 0
-	for i < 16 {
-		a[i] = (uint8)(0x41 + i*2)
-		i++
-	}
-	return a
-
 }
