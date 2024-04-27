@@ -8,7 +8,14 @@ class Ask {
     interceptors = {
         baseURL: BASE_URL,
         request: {
-            headers: {},
+            headers: {
+                "user-agent": "Value1",
+                "user-name":
+                    JSON.parse(localStorage.getItem("user")!).name || "admin",
+                "pass-word":
+                    JSON.parse(localStorage.getItem("user")!).pass ||
+                    "password",
+            },
             body: {},
             use: () => {},
         },
@@ -24,10 +31,15 @@ class Ask {
                 headers: requestHeaders,
                 method: "POST",
                 body: http.Body.bytes(requestBody),
-            }).then((res) => {
-                // res为请求成功的回调数据
-                resolve(this.interceptors.response(res));
-            });
+            })
+                .then((res) => {
+                    // res为请求成功的回调数据
+                    // console.log(res.data, '-----res post',res);
+                    resolve(this.interceptors.response(res));
+                })
+                .catch((err) => {
+                    console.log(err, 1);
+                });
         });
     };
     get = (url: string, data: any) => {
