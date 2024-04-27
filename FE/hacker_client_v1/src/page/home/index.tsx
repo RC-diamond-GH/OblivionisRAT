@@ -19,7 +19,6 @@ const Home: FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isModalOpenBeacon, setIsModalOpenBeacon] = useState(false);
     const [hosts, setHosts] = useState(0);
-    const [newBeaconNum, setNewBeaconNum] = useState(0);
     const [data, setData] = useState<IData[]>([]);
     const [beaconList, setBeaconList] = useState<number[]>([0, 1, 2]);
     const [targetId, setTargetId] = useState(0);
@@ -187,10 +186,6 @@ const Home: FC = () => {
 
     const handleCancel = () => {
         setIsModalOpen(false);
-    };
-
-    const handleConnectNum = (e: any) => {
-        setNewBeaconNum(e.target.value);
     };
 
     /**
