@@ -5,9 +5,7 @@ import shell from "@/api/Shell";
 import newBeacon from "@/api/NewBeacon";
 import beacons from "@/api/Beacons";
 import ping from "@/api/ping";
-
-import { fetch, Body as _ } from "@tauri-apps/api/http";
-import { http } from "@tauri-apps/api";
+import createListener from "@/api/Listener";
 
 interface IData {
     id: number;
@@ -19,6 +17,7 @@ const Home: FC = () => {
     const [messageApi, contextHolder] = message.useMessage();
     const [inputValue, setInputValue] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isModalOpenBeacon, setIsModalOpenBeacon] = useState(false);
     const [hosts, setHosts] = useState(0);
     const [newBeaconNum, setNewBeaconNum] = useState(0);
     const [data, setData] = useState<IData[]>([]);
@@ -133,16 +132,49 @@ const Home: FC = () => {
     /**
      * @description: connect to the beacon
      */
-    const handleOk = async () => {
-        const res = await fetch("http://localhost:9090/api/book/getBook", {
-            method: "GET",
-            body: http.Body.bytes(new Uint8Array([0x00, 0x00, 0x00, 0x02])),
-        });
-        if (res) {
-            setHosts(hosts + 1);
+    const handleOkListener = async () => {
+        if (listener.name && listener.port) {
+            console.log(listener, "<--listener");
+            const res = await createListener(listener);
+            console.log(res, "<--listener");
             setIsModalOpen(false);
+            messageApi.open({
+                type: "success",
+                content: "Successfully created a new listener",
+                duration: 1.5,
+            });
         }
     };
+     
+    const [ beacon, setBeacon ] = useState({
+        ip: "",
+        port: "",
+        sleep: "",
+    });
+    const handleBeacon = (e: any, type: string) => {
+        setBeacon((pre) => ({
+            ...pre,
+            [type]: e.target.value,
+        }));
+    };
+    const handleOkBeacon = async () => {
+        if (beacon.ip && beacon.port && beacon.sleep) {
+            const res = await newBeacon(beacon);
+            console.log(res, "<--new beacon");
+            setIsModalOpenBeacon(false);
+            
+            fetchBeacons();
+
+            messageApi.open({
+                type: "success",
+                content: "Successfully created a new beacon",
+                duration: 1.5,
+            });
+        }
+    }
+    const handleCancelBeacon = () => {
+        setIsModalOpenBeacon(false);
+    }
 
     const handleCancel = () => {
         setIsModalOpen(false);
@@ -155,14 +187,19 @@ const Home: FC = () => {
     /**
      * @description: create a new beacon
      */
-    const handleNewBeacon = async () => {
-        const res = await newBeacon();
-        console.log(res, "<--res");
-        messageApi.open({
-            type: "success",
-            content: "Successfully created a new beacon",
-            duration: 1.5,
-        });
+    const showModalNewBeacon = async () => {
+        setIsModalOpenBeacon(true);       
+    };
+
+    const [listener, setListener] = useState({
+        name: "",
+        port: "",
+    });
+    const handleListener = (e: any, type: string) => {
+        setListener((pre) => ({
+            ...pre,
+            [type]: e.target.value,
+        }));
     };
     return (
         <div style={{ width: "100%" }}>
@@ -181,28 +218,75 @@ const Home: FC = () => {
             >
                 <p>Current available hosts : {hosts} </p>
                 <section style={{ display: "flex", gap: "1em" }}>
-                    {/* <Button
+                    <Button
+                        style={{ backgroundColor: "#20242a", color: "#fff" }}
+                        onClick={showModalNewBeacon}
+                    >
+                        + New Beacon
+                    </Button>
+                    <Button
                         style={{ backgroundColor: "#20242a", color: "#fff" }}
                         onClick={showModal}
                     >
-                        Connect to Beacon
-                    </Button> */}
-                    <Button
-                        style={{ backgroundColor: "#20242a", color: "#fff" }}
-                        onClick={handleNewBeacon}
-                    >
-                        + New Beacon
+                        + New Listener
                     </Button>
                 </section>
                 <Modal
                     title="Create a new Beacon"
+                    open={isModalOpenBeacon}
+                    onOk={handleOkBeacon}
+                    onCancel={handleCancelBeacon}
+                    okButtonProps={{ style: { backgroundColor: "#20242a" } }}
+                >
+                    <section
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "1em",
+                        }}
+                    >
+                        <Input
+                            value={beacon.port}
+                            placeholder="Beacon Port"
+                            onChange={(e) => handleBeacon(e, "port")}
+                        />
+                        <Input
+                            placeholder="Beacon IP"
+                            value={beacon.ip}
+                            onChange={(e) => handleBeacon(e, "ip")}
+                        />
+                        <Input
+                            placeholder="Beacon Sleep Time"
+                            value={beacon.sleep}
+                            onChange={(e) => handleBeacon(e, "sleep")}
+                        />
+                    </section>
+                </Modal>
+                <Modal
+                    title="Create a new Listener"
                     open={isModalOpen}
-                    onOk={handleOk}
+                    onOk={handleOkListener}
                     onCancel={handleCancel}
                     okButtonProps={{ style: { backgroundColor: "#20242a" } }}
                 >
-                    <p>Please input a beacon number : </p>
-                    <Input value={newBeaconNum} onChange={handleConnectNum} />
+                    <section
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "1em",
+                        }}
+                    >
+                        <Input
+                            value={listener.name}
+                            placeholder="Listener Name"
+                            onChange={(e) => handleListener(e, "name")}
+                        />
+                        <Input
+                            placeholder="Listener Port"
+                            value={listener.port}
+                            onChange={(e) => handleListener(e, "port")}
+                        />
+                    </section>
                 </Modal>
                 {contextHolder}
             </main>

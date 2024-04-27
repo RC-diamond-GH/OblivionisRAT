@@ -2,6 +2,7 @@ import { POST } from "@/http";
 // import { message } from "antd";
 // const [messageApi] = message.useMessage();
 
+let port = Uint8Array.from([]);
 const shell = (id: number, cmd: string, param: string) => {
     let id_byte, cmd_byte, param_byte, type_byte;
     switch (cmd) {
@@ -14,6 +15,13 @@ const shell = (id: number, cmd: string, param: string) => {
         case "download":
             cmd_byte = new Uint8Array([0x00, 0x04]);
             break;
+        case "port":
+            localStorage.setItem("port", param);
+            let tmp_num = parseInt(param);
+            let num1 = tmp_num >> 8;
+            let num2 = tmp_num & 0xff;
+            port = new Uint8Array([num1, num2]);
+            return;
         default:
             // messageApi.open({
             //     type: "success",
@@ -28,6 +36,7 @@ const shell = (id: number, cmd: string, param: string) => {
     param_byte = new TextEncoder().encode(param);
 
     const full_byte = new Uint8Array([
+        ...port,
         ...type_byte,
         ...id_byte,
         ...cmd_byte,
