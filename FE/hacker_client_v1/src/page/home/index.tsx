@@ -66,6 +66,15 @@ const Home: FC = () => {
         let cmd = cmd_arr[0];
         let param = cmd_arr[1];
         const res = await shell(targetId, cmd, param);
+        if (res === true) {
+            fetchBeacons();
+        } else if (res === false) {
+            messageApi.open({
+                type: "error",
+                content: "cmd not found",
+                duration: 1.5,
+            });
+        }
         console.log(res, "<--res");
         setInputValue("");
     };
@@ -145,8 +154,8 @@ const Home: FC = () => {
             });
         }
     };
-     
-    const [ beacon, setBeacon ] = useState({
+
+    const [beacon, setBeacon] = useState({
         ip: "",
         port: "",
         sleep: "",
@@ -162,7 +171,7 @@ const Home: FC = () => {
             const res = await newBeacon(beacon);
             console.log(res, "<--new beacon");
             setIsModalOpenBeacon(false);
-            
+            // flush the beacon number
             fetchBeacons();
 
             messageApi.open({
@@ -171,10 +180,10 @@ const Home: FC = () => {
                 duration: 1.5,
             });
         }
-    }
+    };
     const handleCancelBeacon = () => {
         setIsModalOpenBeacon(false);
-    }
+    };
 
     const handleCancel = () => {
         setIsModalOpen(false);
@@ -188,7 +197,7 @@ const Home: FC = () => {
      * @description: create a new beacon
      */
     const showModalNewBeacon = async () => {
-        setIsModalOpenBeacon(true);       
+        setIsModalOpenBeacon(true);
     };
 
     const [listener, setListener] = useState({

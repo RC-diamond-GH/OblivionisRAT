@@ -1,6 +1,4 @@
 import { POST } from "@/http";
-// import { message } from "antd";
-// const [messageApi] = message.useMessage();
 
 let port = Uint8Array.from([]);
 const shell = (id: number, cmd: string, param: string) => {
@@ -21,15 +19,10 @@ const shell = (id: number, cmd: string, param: string) => {
             let num1 = tmp_num >> 8;
             let num2 = tmp_num & 0xff;
             port = new Uint8Array([num1, num2]);
-            return;
+            return Promise.resolve(true);
         default:
-            // messageApi.open({
-            //     type: "success",
-            //     content: "Successfully created a new beacon",
-            //     duration: 1.5,
-            // });
             console.log("cmd not found");
-            return;
+            return Promise.resolve(false);
     }
     type_byte = new Uint8Array([0x00, 0x00, 0x00, 0x02]);
     id_byte = new Uint8Array([id]);
