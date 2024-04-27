@@ -7,4 +7,7 @@
         <username>user2</username>
         <password>pass2</password>
     </user>
+    <host>testhost</host>
+    <useragent>Value1</useragent>
+    <c2port>50050</c2port>>
 </Config>

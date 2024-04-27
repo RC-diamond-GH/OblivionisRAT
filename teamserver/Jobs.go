@@ -3,9 +3,12 @@ package main
 import "encoding/binary"
 
 const (
-	ECHO     = 2
-	LS       = 3
-	DOWNLOAD = 4
+	ECHO       = 2
+	LS         = 3
+	DOWNLOAD   = 4
+	SCREENSHOT = 5
+	ARP        = 6
+	PROCESS    = 7
 )
 
 type Job struct {
