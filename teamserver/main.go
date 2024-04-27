@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/websocket"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 var expectedHeaders = map[string]string{
@@ -67,7 +68,7 @@ func Listener_Handler(w http.ResponseWriter, r *http.Request, listener *Listener
 				break
 			case BEACONS:
 				tmp := len(listener.Beacons)
-				res = append(res, IntToUint8(tmp))
+				res = []byte("{\"c2\":" + strconv.Itoa(tmp) + "}")
 				Send_Bytes_to(w, res, "http://localhost:50049/c2", expectedHeaders)
 				res = make([]byte, 0)
 				break

