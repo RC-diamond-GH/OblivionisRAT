@@ -18,8 +18,15 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* Paths */    
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
+  /* Include global.d.ts to help vscode recognize svg...'s type */
   "include": ["src","global.d.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

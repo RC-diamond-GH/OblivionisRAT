@@ -2,7 +2,7 @@
   "build": {
     "beforeBuildCommand": "pnpm build",
     "beforeDevCommand": "pnpm dev",
-    "devPath": "http://localhost:3000",
+    "devPath": "http://localhost:9119",
     "distDir": "../dist"
   },
   "package": {
@@ -11,7 +11,15 @@
   },
   "tauri": {
     "allowlist": {
-      "all": true
+      "all": true,
+      "http":{
+        "all": true,
+        "request": true,
+        "scope":[
+          "http://**",
+          "https://**"
+        ]
+      }
     },
     "bundle": {
       "active": true,
