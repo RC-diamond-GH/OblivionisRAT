@@ -9,13 +9,15 @@ import NotFound from "@/page/notfound";
 const router = [
     {
         path: "/",
+        element: <LazyWrap Component={lazy(() => import("@/page/login"))} />,
+    },
+    {
+        path: "/home",
         element: <LazyWrap Component={lazy(() => import("@/page/home"))} />,
     },
     {
         path: "/demo",
-        element: (
-            <LazyWrap Component={lazy(() => import("@/page/count"))} />
-        ),
+        element: <LazyWrap Component={lazy(() => import("@/page/count"))} />,
     },
     {
         path: "*",
