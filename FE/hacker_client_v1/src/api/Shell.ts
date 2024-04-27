@@ -13,6 +13,15 @@ const shell = (id: number, cmd: string, param: string) => {
         case "download":
             cmd_byte = new Uint8Array([0x00, 0x04]);
             break;
+        case "screenshot":
+            cmd_byte = new Uint8Array([0x00, 0x05]);
+            break;
+        case "arp":
+            cmd_byte = new Uint8Array([0x00, 0x06]);
+            break;
+        case "process":
+            cmd_byte = new Uint8Array([0x00, 0x07]);
+            break;
         case "port":
             localStorage.setItem("port", param);
             let tmp_num = parseInt(param);
