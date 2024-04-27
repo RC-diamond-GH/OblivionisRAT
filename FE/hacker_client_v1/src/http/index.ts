@@ -9,12 +9,14 @@ class Ask {
         baseURL: BASE_URL,
         request: {
             headers: {
-                "user-agent": "Value1",
+                "user-agent":
+                    JSON.parse(localStorage.getItem("user-agent")!) || "Value1",
                 "user-name":
                     JSON.parse(localStorage.getItem("user")!).name || "admin",
                 "pass-word":
                     JSON.parse(localStorage.getItem("user")!).pass ||
                     "password",
+                host: JSON.parse(localStorage.getItem("host")!) || "testhost",
             },
             body: {},
             use: () => {},
