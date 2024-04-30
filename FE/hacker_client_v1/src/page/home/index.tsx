@@ -345,7 +345,13 @@ const Home: FC = () => {
                         <Typography.Text type="success">
                             [SHELL ${item.id}]
                         </Typography.Text>{" "}
-                        {item.msg}
+                        <span
+                            style={{
+                                whiteSpace: "pre-line",
+                            }}
+                        >
+                            {item.msg}
+                        </span>
                     </List.Item>
                 )}
             />
