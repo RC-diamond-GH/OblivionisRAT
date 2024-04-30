@@ -42,6 +42,7 @@ Uint128 uint64Multi(size_t a, size_t b) {
     *(size_t *)(tmpc + 8) += tmp >> 32;
     return Uint128(*low, *high);
 }
+
 void tmpcAdd(unsigned char *tmpc, Uint128 toAdd) {
     size_t aH = toAdd.HG, aL = toAdd.LW;
     *(size_t *)(tmpc)      += aL & B32MASK;

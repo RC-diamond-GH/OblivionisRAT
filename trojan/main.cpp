@@ -54,7 +54,7 @@ int main() {
     //config->sleep = 500;
     n = findNext(n);
     config->a = (unsigned char *)(configData + n + 1);
-    printConfig(config);
+    //printConfig(config);
 
     networkSuitInitial();
     registerC2();
