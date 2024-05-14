@@ -1,0 +1,16 @@
+<Listener>
+  <lisname>1212</lisname>
+  <uri>IGOR-8080</uri>
+  <port>8080</port>
+  <a>abcdefghijklmnop</a>
+  <beacon>
+    <hostname>Desktop-win-99k2</hostname>
+    <ip>127.0.0.1</ip>
+    <domain>testhost</domain>
+    <arch>x86-64</arch>
+    <system>windows 10</system>
+    <CusAES>61520104192171918084236204537806081406</CusAES>
+    <AESkey>39329882659375841705172181680826638531</AESkey>
+    <live>true</live>
+  </beacon>
+</Listener>
