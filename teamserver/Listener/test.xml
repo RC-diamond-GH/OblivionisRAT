@@ -1,0 +1,6 @@
+<Listener>
+    <lisname>test</lisname>
+    <uri>IGOR-27753</uri>
+    <port>27753</port>
+    <a>s��abcdefghijklmnop</a>
+</Listener>
